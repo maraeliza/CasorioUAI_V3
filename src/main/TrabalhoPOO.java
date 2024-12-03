@@ -8,10 +8,11 @@ public class TrabalhoPOO {
     public static void main(String[] args) {
         try {
             DAO dao = new DAO("root", "senhadobanco", "bancoCasorioUAI");
-            dao.criar();
+            dao.addInfosIniciais();
             TelaInicial menu = new TelaInicial();
             menu.exibir(dao);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 }

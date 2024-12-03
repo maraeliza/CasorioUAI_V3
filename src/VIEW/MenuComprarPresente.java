@@ -56,7 +56,7 @@ public class MenuComprarPresente {
             int idInserido = Util.stringToInt(result);
             if (idInserido != 0) {
                 try {
-                    boolean existe = this.dao.find(this.idClasse, idInserido);
+                    boolean existe = this.dao.isInList(this.idClasse, idInserido);
                     if (existe) {
                         Presente presente = (Presente) this.dao.getItemByID(idClasse, idInserido);
                         if (presente != null && presente.getEscolhido()) {

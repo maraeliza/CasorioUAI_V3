@@ -5,6 +5,8 @@
 package MODEL;
 import CONTROLLER.DAO;
 import VIEW.Util;
+
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -289,6 +291,11 @@ public class Usuario implements InterfaceClasse {
     public void apagar(){
         this.pessoa.setUserVinculado(false);
         this.pessoa.setCerimonialVinculado(false);
-        this.dao.delItemByID(3, this.getId());
+
+        try {
+            this.dao.delItemByID(3, this.getId());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
