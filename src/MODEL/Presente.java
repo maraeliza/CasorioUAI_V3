@@ -8,13 +8,13 @@ import CONTROLLER.DAO;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Mara
  */
-public class Presente implements InterfaceClasse {
+public class Presente implements InterfaceClasse, InterfaceBanco {
 
     private int id;
     private String nome;
@@ -44,6 +44,83 @@ public class Presente implements InterfaceClasse {
         return campos;
     }
 
+    public Presente() {
+        this.idPessoa = 0;
+        this.escolhido = false;
+        this.comprado = false;
+    }
+
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("nome");
+        campos.add("tipo");
+        campos.add("link");
+        campos.add("idPessoa");
+        campos.add("dataCompra");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        campos.add("escolhido");
+        campos.add("comprado");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.nome);
+        valores.add(this.tipo);
+        valores.add(this.link);
+        valores.add(this.idPessoa);
+        valores.add(this.dataCompra);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        valores.add(this.escolhido);
+        valores.add(this.comprado);
+        return valores;
+    }
+
+    @Override
+    public String getNomeTabela() {
+        return "TB_PRESENTE";
+    }
+
+    public static String getNomeTabelaByClass() {
+        return "TB_PRESENTE";
+    }
+
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        boolean alterado = vetor.get(1) != null && vetor.get(2) != null;
+
+        if (!alterado) {
+            return false;
+        } else {
+            this.dao = dao;
+            this.id = (int) vetor.get(0);
+            this.nome = (String) vetor.get(1);
+            this.tipo = (String) vetor.get(2);
+            this.link = (String) vetor.get(3);
+
+            if (vetor.get(4) != null && (int) vetor.get(4) != 0) {
+                this.idPessoa = (int) vetor.get(4);
+                Object objB = this.dao.getItemByID(2, this.idPessoa);
+                if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
+                    this.pessoa = (Pessoa) objB;
+                }
+            }
+
+            this.dataCompra = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
+            this.dataCriacao = vetor.get(6) != null ? (LocalDate) vetor.get(6) : null;
+            this.dataModificacao = vetor.get(7) != null ? (LocalDate) vetor.get(7) : null;
+            this.escolhido = (boolean) vetor.get(8);
+            this.comprado = (boolean) vetor.get(9);
+            return true;
+        }
+    }
+
     public boolean criar(DAO dao, List<Object> vetor) {
         boolean alterado = false;
         this.dao = dao;
@@ -60,7 +137,7 @@ public class Presente implements InterfaceClasse {
         }
         if (alterado) {
             // Atribui o ID único e define as datas de criação e modificação
-            this.id = ++Presente.total;
+            this.id = this.dao.getTotalClasse(1) + 1;
             this.dataCriacao = LocalDate.now();
             this.dataModificacao = null; // Nenhuma modificação inicial
             this.escolhido = false;
@@ -76,21 +153,21 @@ public class Presente implements InterfaceClasse {
         resultado.append("\n\nID: ").append(this.id);
 
         // Verifica e adiciona o nome
-        if (this.nome != null && this.nome.length() > 0) {
+        if (this.nome != null && !this.nome.isEmpty()) {
             resultado.append("\nNome: ").append(this.nome);
         }
 
         // Verifica e adiciona o tipo
-        if (this.tipo != null && this.tipo.length() > 0) {
+        if (this.tipo != null && !this.tipo.isEmpty()) {
             resultado.append("\nTipo: ").append(this.tipo);
         }
         // Verifica e adiciona o tipo
-        if (this.link != null && this.link.length() > 0) {
+        if (this.link != null && !this.link.isEmpty()) {
             resultado.append("\nLink de compra: ").append(this.link);
         }
         if (this.comprado) {
             resultado.append("\nComprado: SIM");
-            if (this.pessoa != null && this.pessoa.getNome() != null && this.pessoa.getNome().length() > 0) {
+            if (this.pessoa != null && this.pessoa.getNome() != null && !this.pessoa.getNome().isEmpty()) {
                 resultado.append("\nComprador(a): ").append(this.pessoa.getNome());
             }
         } else {
@@ -99,7 +176,7 @@ public class Presente implements InterfaceClasse {
         // Verifica se foi escolhido e adiciona informações da pessoa
         if (this.escolhido) {
             resultado.append("\nEscolhido: SIM");
-            if (this.pessoa != null && this.pessoa.getNome() != null && this.pessoa.getNome().length() > 0) {
+            if (this.pessoa != null && this.pessoa.getNome() != null && !this.pessoa.getNome().isEmpty()) {
                 resultado.append("\nPresenteador(a): ").append(this.pessoa.getNome());
             }
         } else {
@@ -124,7 +201,7 @@ public class Presente implements InterfaceClasse {
 
         if (vetor.get(1) != null) {
             String nome = (String) vetor.get(1);
-            if (nome.length() > 0) {
+            if (!nome.isEmpty()) {
                 this.nome = nome;
                 alterou = true;
 
@@ -132,7 +209,7 @@ public class Presente implements InterfaceClasse {
         }
         if (vetor.get(2) != null) {
             String tipo = (String) vetor.get(2);
-            if (tipo.length() > 0) {
+            if (!tipo.isEmpty()) {
                 this.tipo = tipo;
                 alterou = true;
 
@@ -140,7 +217,7 @@ public class Presente implements InterfaceClasse {
         }
         if (vetor.get(3) != null) {
             String link = (String) vetor.get(3);
-            if (link.length() > 0) {
+            if (!link.isEmpty()) {
                 this.link = link;
                 alterou = true;
 
@@ -154,37 +231,43 @@ public class Presente implements InterfaceClasse {
     }
 
     public boolean comprar(Pessoa p) {
-
-        if (p != null && this.comprado == false) {
+        boolean alterou = false;
+        if (p != null && !this.comprado) {
             this.setPessoa(p);
             this.comprado = true;
             this.setIdPessoa(this.pessoa.getId());
-            return true;
+            alterou = true;
         } else if (this.comprado) {
             this.comprado = false;
-            return true;
+            alterou = true;
         }
-        this.atualizarDataModificacao();
-        return false;
+        if (alterou) {
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
+        }
+        return alterou;
     }
 
     public boolean escolher(Pessoa p) {
-
-        if (p != null && this.escolhido == false) {
+        boolean alterou = false;
+        if (p != null && !this.escolhido) {
             this.setPessoa(p);
             this.escolhido = true;
-            return true;
+
+            alterou = true;
         } else if (this.escolhido) {
             this.setPessoa(null);
             this.escolhido = false;
-            return true;
+            alterou = true;
         }
-        this.atualizarDataModificacao();
-        return false;
+        if (alterou) {
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
+        }
+        return alterou;
     }
 
     public void atualizarDataModificacao() {
-
         this.dataModificacao = LocalDate.now();
     }
 
@@ -257,15 +340,14 @@ public class Presente implements InterfaceClasse {
 
     public void setPessoa(Pessoa pessoa) {
         if (pessoa != null) {
-                
+
             this.pessoa = pessoa;
             this.setIdPessoa(this.pessoa.getId());
-            this.dataModificacao = LocalDate.now();
-        }else{
+        } else {
             this.pessoa = null;
             this.setIdPessoa(0);
-            this.dataModificacao = LocalDate.now();
         }
+        this.dataModificacao = LocalDate.now();
     }
 
     public boolean getEscolhido() {

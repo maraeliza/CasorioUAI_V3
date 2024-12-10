@@ -7,13 +7,14 @@ package MODEL;
 import CONTROLLER.DAO;
 import VIEW.Menu_READ;
 import VIEW.Util;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Despesa implements InterfaceClasse {
+public class Despesa implements InterfaceClasse, InterfaceBanco {
 
     private int id;
 
@@ -39,7 +40,6 @@ public class Despesa implements InterfaceClasse {
     private LocalDate dataModificacao;
 
     private DAO dao;
-    private Usuario user;
 
     private static int total;
 
@@ -49,6 +49,99 @@ public class Despesa implements InterfaceClasse {
         this.agendado = false;
         this.parcelado = false;
     }
+
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("idFornecedor");
+        campos.add("valorTotal");
+        campos.add("descricao");
+        campos.add("nome");
+        campos.add("dataPrimeiroVencimento");
+        campos.add("dataUltimoVencimento");
+        campos.add("dataAgendamento");
+        campos.add("dataQuitacao");
+        campos.add("pago");
+        campos.add("agendado");
+        campos.add("parcelado");
+        campos.add("nParcelas");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.idFornecedor);
+        valores.add(this.valorTotal);
+        valores.add(this.descricao);
+        valores.add(this.nome);
+        valores.add(this.dataPrimeiroVencimento);
+        valores.add(this.dataUltimoVencimento);
+        valores.add(this.dataAgendamento);
+        valores.add(this.dataQuitacao);
+        valores.add(this.pago);
+        valores.add(this.agendado);
+        valores.add(this.parcelado);
+        valores.add(this.nParcelas);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        return valores;
+    }
+
+    @Override
+    public String getNomeTabela() {
+        return "TB_DESPESA";
+    }
+
+    public static String getNomeTabelaByClass() {
+        return "TB_DESPESA";
+    }
+
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        System.out.println(vetor);
+        boolean alterado = vetor.get(0) != null;
+        if (!alterado) {
+            return alterado;
+        } else {
+            this.dao = dao;
+            this.id = (int) vetor.get(0);
+            int idFornecedor = (int) vetor.get(1);
+            Object objB = this.dao.getItemByID(4, idFornecedor); // Assumindo o ID é 3 para fornecedor
+            System.out.println(objB);
+            if (objB != null) {
+                if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
+
+                    this.idFornecedor = idFornecedor;
+                    this.fornecedor = (Fornecedor) objB;
+
+                } else {
+                    System.out.println("Fornecedor não encontrado no banco");
+                }
+            }
+            this.valorTotal = (vetor.get(2) != null) ? (double) vetor.get(2) : 0.0;
+            this.descricao = (vetor.get(3) != null) ? (String) vetor.get(3) : "";
+            this.nome = (vetor.get(4) != null) ? (String) vetor.get(4) : "";
+            this.dataPrimeiroVencimento = (vetor.get(5) != null) ? (LocalDate) vetor.get(5) : null;
+            this.dataUltimoVencimento = (vetor.get(6) != null) ? (LocalDate) vetor.get(6) : null;
+            this.dataAgendamento = (vetor.get(7) != null) ? (LocalDate) vetor.get(7) : null;
+            this.dataQuitacao = (vetor.get(8) != null) ? (LocalDate) vetor.get(8) : null;
+            this.pago = vetor.get(9) != null && (boolean) vetor.get(9);
+            this.agendado = vetor.get(10) != null && (boolean) vetor.get(10);
+            this.parcelado = vetor.get(11) != null && (boolean) vetor.get(11);
+            this.nParcelas = (vetor.get(12) != null) ? (int) vetor.get(12) : 0;
+            this.dataCriacao = (vetor.get(13) != null) ? (LocalDate) vetor.get(13) : null;
+            this.dataModificacao = (vetor.get(14) != null) ? (LocalDate) vetor.get(14) : null;
+            return alterado;
+
+        }
+
+    }
+
 
     public static String[] getCampos() {
         String[] campos = new String[10];
@@ -93,7 +186,7 @@ public class Despesa implements InterfaceClasse {
                         } else {
                             this.setParcelado(false);
                         }
-                        this.id = Despesa.total + 1;
+                        this.id = this.dao.getTotalClasse(12) + 1;
 
                     }
                 }
@@ -376,6 +469,7 @@ public class Despesa implements InterfaceClasse {
         this.dataModificacao = LocalDate.now();
     }
 
+    @Override
     public int getId() {
         return id;
     }
@@ -516,13 +610,6 @@ public class Despesa implements InterfaceClasse {
         this.parcelado = parcelado;
     }
 
-    public Usuario getUser() {
-        return user;
-    }
-
-    public void setUser(Usuario user) {
-        this.user = user;
-    }
 
     public LocalDate getDataAgendamento() {
         return dataAgendamento;

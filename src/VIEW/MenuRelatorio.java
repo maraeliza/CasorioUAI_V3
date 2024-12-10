@@ -8,6 +8,22 @@ import CONTROLLER.DAO;
 import MODEL.Usuario;
 import javax.swing.JOptionPane;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+
 /**
  *
  * @author Mara
@@ -192,13 +208,27 @@ public class MenuRelatorio {
             int idEvento = Util.stringToInt(idEventoInserido);
             String gerandoConvite = this.dao.gerarConviteFamilia(idEvento, idFamilia);
             JOptionPane.showMessageDialog(null, gerandoConvite, "Convite", JOptionPane.INFORMATION_MESSAGE);
+            this.gerarPDF("convite", gerandoConvite);
         } else {
 
             JOptionPane.showMessageDialog(null, "Id do convidado não inserido.", "Erro", JOptionPane.WARNING_MESSAGE);
 
         }
     }
-
+    public void gerarPDF(String nomeArquivo, String texto) {
+        try {
+            String local = System.getProperty("user.dir") + File.separator + "src" + File.separator + "RELATORIOS" + File.separator;
+            Document documento = new Document(PageSize.A2);
+            PdfWriter.getInstance(documento, new FileOutputStream(local + nomeArquivo + ".pdf"));
+            documento.open();
+            Paragraph conteudo = new Paragraph(texto);
+            documento.add(conteudo);
+            documento.close();
+            System.out.println(nomeArquivo + ".pdf adicionado com sucesso");
+        } catch (DocumentException | FileNotFoundException e) {
+            System.err.println("Erro ao gerar PDF: " + e.getMessage());
+        }
+    }
 
     private void mostrarConvidados() {
         // Tenta obter os nomes dos convidados

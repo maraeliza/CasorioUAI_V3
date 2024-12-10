@@ -119,7 +119,7 @@ public class ConvidadoFamilia implements InterfaceClasse, InterfaceBanco {
 
         this.dataCriacao = LocalDate.now();
         this.dataModificacao = null;
-        this.id = ++ConvidadoFamilia.total; // Aumenta o contador de IDs
+        this.id = this.dao.getTotalClasse(10) +1; // Aumenta o contador de IDs
         return true;
 
     }

@@ -144,7 +144,7 @@ public class Fornecedor implements InterfaceClasse, InterfaceBanco {
             this.telefone = (String) vetor.get(2);
             this.dataCriacao = LocalDate.now();
             this.dataModificacao = null;
-            this.id = ++Fornecedor.total; // Aumenta o contador de IDs
+            this.id = this.dao.getTotalClasse(4) +1; // Aumenta o contador de IDs
         }
         this.atualizarValores();
         return true;

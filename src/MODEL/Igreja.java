@@ -5,11 +5,12 @@
 package MODEL;
 
 /**
- *
  * @author Jussie
  */
+
 import CONTROLLER.DAO;
 import VIEW.Util;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -75,41 +76,39 @@ public class Igreja implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        boolean alterado = false;
+        boolean alterado = true; // Presume inicialmente que todos serão alterados
+        this.dao = dao;
 
-        if (vetor.get(0) != null) {
-            this.id = (int) vetor.get(0);
-            alterado = true;
-        }
-        if (vetor.get(1) != null) {
-            this.nome = (String) vetor.get(1);
-            alterado = true;
-        }
+        // Mapeia os campos e suas ações
+        Object[] campos = {this.id, this.nome, this.endereco, this.eventoVinculado, this.dataCriacao};
 
-        if (vetor.get(2) != null) {
-            this.endereco = (String) vetor.get(2);
-            alterado = true;
-        }
-        if (vetor.get(3) != null) {
-            if (vetor.get(3) instanceof String) {
-                this.eventoVinculado = ((String) vetor.get(3)).equals("true");
-
-            } else if (vetor.get(3) instanceof Boolean) {
-                this.eventoVinculado = (Boolean) vetor.get(3);
+        for (int i = 0; i < campos.length; i++) {
+            if (vetor.get(i) != null) {
+                switch (i) {
+                    case 0 -> this.id = (int) vetor.get(i);
+                    case 1 -> this.nome = (String) vetor.get(i);
+                    case 2 -> this.endereco = (String) vetor.get(i);
+                    case 3 -> {
+                        if (vetor.get(3) instanceof String) {
+                            this.eventoVinculado = ((String) vetor.get(3)).equals("true");
+                        } else if (vetor.get(3) instanceof Boolean) {
+                            this.eventoVinculado = (Boolean) vetor.get(3);
+                        } else {
+                            this.eventoVinculado = false;
+                        }
+                    }
+                    case 4 -> this.dataCriacao = (LocalDate) vetor.get(i);
+                }
             } else {
-                this.eventoVinculado = false;
+                alterado = false; // Marca como falso se um campo não for modificado
             }
+        }
 
-            alterado = true;
-        }
-        if (vetor.get(4) != null) {
-            this.dataCriacao = (LocalDate) vetor.get(4);
-            alterado = true;
-        }
+        // `dataModificacao` não impacta o estado de `alterado`
         if (vetor.get(5) != null) {
             this.dataModificacao = (LocalDate) vetor.get(5);
-            alterado = true;
         }
+
         return alterado;
 
     }
@@ -131,7 +130,7 @@ public class Igreja implements InterfaceClasse, InterfaceBanco {
         if (alterado) {
             this.dataCriacao = LocalDate.now();
             this.dataModificacao = null;
-            this.id = ++Igreja.total;
+            this.id = this.dao.getTotalClasse(7) + 1;
         }
 
         return alterado;

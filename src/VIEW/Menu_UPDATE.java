@@ -72,7 +72,7 @@ public class Menu_UPDATE {
             if (idInserido != 0) {
                 this.valores.add(result);
                 try {
-                    boolean existe = this.dao.find(this.idClasse, idInserido);
+                    boolean existe = this.dao.isInList(this.idClasse, idInserido);
                     if (existe) {
                         this.nColetados = 0;
                         for (int i = 1; i < this.vetor.length; i++) {

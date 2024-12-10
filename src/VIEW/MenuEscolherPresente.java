@@ -63,21 +63,20 @@ public class MenuEscolherPresente {
             int idInserido = Util.stringToInt(result);
             if (idInserido != 0) {
                 try {
-                    boolean existe = this.dao.find(this.idClasse, idInserido);
+                    boolean existe = this.dao.isInList(this.idClasse, idInserido);
                     if (existe) {
                         Presente presente = (Presente) this.dao.getItemByID(idClasse, idInserido);
                         if (presente != null) {
-                            //checa se o presente foi escolhido já
                             if (presente.getEscolhido()) {
-                                //checa se a pessoa que está logada agora é a pessoa que escolheu o presente
                                 if (this.dao.getUserLogado().getIdPessoa() == presente.getIdPessoa()) {
-                                    //altera a escolha
                                     presente.escolher(this.user.getPessoa());
                                     if (presente.getEscolhido()) {
+
                                         Util.mostrarMSG("Presente escolhido com sucesso!");
                                     } else {
                                         Util.mostrarMSG("Escolha do presente cancelada!");
                                     }
+
                                 } else {
                                     Util.mostrarMSG("Você não é o presenteador!");
                                 }
@@ -101,7 +100,7 @@ public class MenuEscolherPresente {
                         this.exibir(this.dao, this.idClasse);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
                 }
             }else{
                 Util.criarMenuCRUD(this.dao, 1);

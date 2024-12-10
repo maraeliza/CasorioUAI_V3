@@ -99,6 +99,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
     public static String getNomeTabelaByClass() {
         return "tb_pessoa";
     }
+
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
         boolean alterado = false;
@@ -261,10 +262,9 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
 
             }
             if (criado) {
-                // Atribui o ID único e define as datas de criação e modificação
-                this.id = ++Pessoa.total;
+                this.id = this.dao.getTotalClasse(2);
                 this.dataCriacao = LocalDate.now();
-                this.dataModificacao = null; // Nenhuma modificação inicial
+                this.dataModificacao = null;
 
             }
         }

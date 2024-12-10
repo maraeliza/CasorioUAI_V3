@@ -140,7 +140,7 @@ public class ConvidadoIndividual implements InterfaceClasse {
                                 if (alterado) {
                                     this.dataCriacao = LocalDate.now();
                                     this.dataModificacao = null;
-                                    this.id = ++ConvidadoIndividual.total; // Incrementa o contador de IDs
+                                    this.id = this.dao.getTotalClasse(9) +1; // Incrementa o contador de IDs
                                 }
                             }
 

@@ -117,7 +117,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         if (alterado) {
             this.dataCriacao = LocalDate.now();
             this.dataModificacao = null;
-            this.id = ++Cartorio.total; // Supondo que 'total' é um contador de IDs
+            this.id = this.dao.getTotalClasse(8) +1; // Supondo que 'total' é um contador de IDs
         }
         vetor.clear();
         return alterado;
@@ -129,7 +129,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
 
         if (vetor.get(1) != null) {
             String novoNome = (String) vetor.get(1);
-            if (novoNome.length() > 0 && !this.nome.equals(novoNome)) {
+            if (!novoNome.isEmpty() && !this.nome.equals(novoNome)) {
                 this.nome = novoNome;
                 alterou = true;
             }
@@ -137,7 +137,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
 
         if (vetor.get(2) != null) {
             String novoTelefone = (String) vetor.get(2);
-            if (novoTelefone.length() > 0 && !this.telefone.equals(novoTelefone)) {
+            if (!novoTelefone.isEmpty() && !this.telefone.equals(novoTelefone)) {
                 this.telefone = novoTelefone;
                 alterou = true;
             }
@@ -145,7 +145,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
 
         if (vetor.get(3) != null) {
             String novoEndereco = (String) vetor.get(3);
-            if (novoEndereco.length() > 0 && !this.endereco.equals(novoEndereco)) {
+            if (!novoEndereco.isEmpty() && !this.endereco.equals(novoEndereco)) {
                 this.endereco = novoEndereco;
                 alterou = true;
             }
@@ -164,7 +164,51 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         campos[3] = "Endereço: ";
         return campos;
     }
-   
+    // Método para atualizar a data de modificação
+    public void atualizarDataModificacao() {
+        this.dataModificacao = LocalDate.now();
+    }
+
+    // Método para deletar cartório
+    public boolean deletar() {
+        if (this.isEventoVinculado()) {
+            Util.mostrarErro("Não é possível excluir o cartório " + this.getNome() + ", pois ele está vinculado a um evento");
+            return false;
+        } else {
+            return true;
+        }
+    }
+    public String ler() {
+        StringBuilder resultado = new StringBuilder();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+        // Adiciona informações do cartório
+        resultado.append("Cartório ").append(this.id);
+        resultado.append("\nNome: ").append(this.nome);
+
+        // Verifica e adiciona o telefone
+        if (this.telefone != null && !this.telefone.isEmpty()) {
+            resultado.append("\nTelefone: ").append(this.telefone);
+        }
+
+        // Verifica e adiciona o endereço
+        if (this.endereco != null && !this.endereco.isEmpty()) {
+            resultado.append("\nEndereço: ").append(this.endereco);
+        }
+
+        // Verifica e formata a data de criação
+        if (this.dataCriacao != null) {
+            resultado.append("\nData de Criação: ").append(this.dataCriacao.format(formatter));
+        }
+
+        // Verifica e formata a data de modificação
+        if (this.dataModificacao != null) {
+            resultado.append("\nData da Última Modificação: ").append(this.dataModificacao.format(formatter));
+        }
+
+        resultado.append("\n\n");
+        return resultado.toString();
+    }
 
     // Getters e Setters
     public int getId() {
@@ -218,53 +262,6 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         return this.dataModificacao;
     }
 
-
-
-    // Método para atualizar a data de modificação
-    public void atualizarDataModificacao() {
-        this.dataModificacao = LocalDate.now();
-    }
-
-    // Método para deletar cartório
-    public boolean deletar() {
-        if (this.isEventoVinculado()) {
-            Util.mostrarErro("Não é possível excluir o cartório " + this.getNome() + ", pois ele está vinculado a um evento");
-            return false;
-        } else {
-            return true;
-        }
-    }
-    public String ler() {
-        StringBuilder resultado = new StringBuilder();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
-        // Adiciona informações do cartório
-        resultado.append("Cartório ").append(this.id);
-        resultado.append("\nNome: ").append(this.nome);
-
-        // Verifica e adiciona o telefone
-        if (this.telefone != null && !this.telefone.isEmpty()) {
-            resultado.append("\nTelefone: ").append(this.telefone);
-        }
-
-        // Verifica e adiciona o endereço
-        if (this.endereco != null && !this.endereco.isEmpty()) {
-            resultado.append("\nEndereço: ").append(this.endereco);
-        }
-
-        // Verifica e formata a data de criação
-        if (this.dataCriacao != null) {
-            resultado.append("\nData de Criação: ").append(this.dataCriacao.format(formatter));
-        }
-
-        // Verifica e formata a data de modificação
-        if (this.dataModificacao != null) {
-            resultado.append("\nData da Última Modificação: ").append(this.dataModificacao.format(formatter));
-        }
-
-        resultado.append("\n\n");
-        return resultado.toString();
-    }
     public boolean isEventoVinculado() {
         return eventoVinculado;
     }

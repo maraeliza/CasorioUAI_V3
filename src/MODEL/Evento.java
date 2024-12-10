@@ -6,133 +6,38 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.Util;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
-public class Evento implements InterfaceClasse {
+public class Evento implements InterfaceClasse, InterfaceBanco {
 
-    // Atributos da classe
     private int id;
 
     private String nome;
-    private Cerimonial cerimonial;
+
     private int idIgreja;
     private int idCerimonial;
     private int idCartorio;
-    private Igreja igreja;
-    private Cartorio cartorio;
     private int idNoiva;
-    private Pessoa noiva;
     private int idNoivo;
+
+    private Igreja igreja;
+    private Cerimonial cerimonial;
+    private Cartorio cartorio;
+
+    private Pessoa noiva;
     private Pessoa noivo;
 
     private LocalDate data;
     private LocalDate dataCriacao;
     private LocalDate dataModificacao;
-    
+
     private DAO dao;
 
-
-    public String getEndereco(){
-        if (this.getIgreja()!=null) {
-            return this.getIgreja().getEndereco();
-        }else{
-            if (this.getCartorio()!=null) {
-                return this.getCartorio().getEndereco();
-            }
-        }
-        return "N/A";
-    }
-
-    public void setCerimonial(Cerimonial cerimonial) {
-        if (this.cerimonial != null) {
-            this.cerimonial.setEventoVinculado(false);
-        }
-        if (cerimonial != null) {
-            this.cerimonial = cerimonial;
-            this.cerimonial.setEventoVinculado(true);
-            this.idCerimonial = this.cerimonial.getId(); 
-            this.dataModificacao = LocalDate.now();
-        }
-    }
-
-    public Igreja getIgreja() {
-        return this.igreja;
-    }
-
-    public void setCartorio(Cartorio cartorio) {
-        if (this.cartorio != null) {
-            this.cartorio.setEventoVinculado(false);
-        }
-        if (cartorio != null) {
-            this.cartorio = cartorio;
-            this.cartorio.setEventoVinculado(true);
-            this.idCartorio = this.cartorio.getId();
-            this.dataModificacao = LocalDate.now();
-        }
-    }
-    
-    public void setIgreja(Igreja igreja) {
-        if (this.igreja != null) {
-            this.igreja.setEventoVinculado(false);
-        }
-        if (igreja != null) {
-            this.igreja = igreja;
-            this.igreja.setEventoVinculado(true);
-            this.idIgreja = this.igreja.getId();
-            this.dataModificacao = LocalDate.now();
-        }
-    }
-    
-    public Cartorio getCartorio() {
-        return this.cartorio;
-    }
-
-    public Pessoa getNoiva() {
-        return this.noiva;
-    }
-
-    public void setNoiva(Pessoa noiva) {
-        if (noiva != null
-                && noiva.getTipo().toUpperCase().equals("NOIVA")) {
-            this.noiva = noiva;
-            this.idNoiva = this.noiva.getId();
-            this.dataModificacao = LocalDate.now();
-        }
-
-    }
-
-    public Pessoa getNoivo() {
-        return this.noivo;
-    }
-
-    public void setNoivo(Pessoa noivo) {
-        if (noivo != null
-                && noivo.getTipo().toUpperCase().equals("NOIVO")) {
-            this.noivo = noivo;
-            this.idNoivo = this.noivo.getId();
-            this.dataModificacao = LocalDate.now();
-        }
-    }
-
-    public LocalDate getData() {
-        return this.data;
-    }
-
-    public void setData(LocalDate data) {
-        this.data = data;
-        this.dataModificacao = LocalDate.now();
-    }
-
-    public LocalDate getDataCriacao() {
-        return this.dataCriacao;
-    }
-
-    public LocalDate getDataModificacao() {
-        return this.dataModificacao;
-    }
 
     public static String[] getCampos() {
         String[] campos = new String[11]; // Aumentando o tamanho do array para 11
@@ -145,65 +50,152 @@ public class Evento implements InterfaceClasse {
         return campos;
     }
 
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("nome");
+        campos.add("idCerimonial");
+        campos.add("idIgreja");
+        campos.add("idCartorio");
+        campos.add("idNoiva");
+        campos.add("idNoivo");
+        campos.add("data");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        return campos;
+    }
+
+    @Override
+    public String getNomeTabela() {
+        return "tb_evento";
+    }
+
+    public static String getNomeTabelaByClass() {
+        return "tb_evento";
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.nome);
+        valores.add(this.idCerimonial);
+        valores.add(this.idIgreja);
+        valores.add(this.idCartorio);
+        valores.add(this.idNoiva);
+        valores.add(this.idNoivo);
+        valores.add(this.data);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        return valores;
+    }
+
+
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        System.out.println(vetor);
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null;
+        if (!alterado) {
+            return alterado;
+        } else {
+            try {
+                this.id = (int) vetor.get(0);
+                System.out.println("ID: " + this.id);
+                this.nome = (String) vetor.get(1);
+                if (vetor.get(2) != null && (int) vetor.get(2) != 0) {
+                    this.idCerimonial = (int) vetor.get(2);
+                    this.cerimonial = (Cerimonial) dao.getBanco().getItemByIDBanco(6, this.idCerimonial);
+
+                }
+
+                if (vetor.get(3) != null && (int) vetor.get(3) != 0) {
+                    this.idIgreja = (int) vetor.get(3);
+                    this.igreja = (Igreja) dao.getItemByID(7, this.idIgreja);
+
+                }
+
+                if (vetor.get(4) != null && (int) vetor.get(4) != 0) {
+                    this.idCartorio = (int) vetor.get(4);
+                    this.cartorio = (Cartorio) dao.getItemByID(8, this.idCartorio);
+
+                }
+
+                if (vetor.get(5) != null && (int) vetor.get(5) != 0) {
+                    this.idNoiva = (int) vetor.get(5);
+                    this.noiva = (Pessoa) dao.getItemByID(2, this.idNoiva);
+
+                }
+
+                if (vetor.get(6) != null && (int) vetor.get(6) != 0) {
+                    this.idNoivo = (int) vetor.get(6);
+                    this.noivo = (Pessoa) dao.getItemByID(2, this.idNoivo);
+
+                }
+                this.data = vetor.get(7) != null ? (LocalDate) vetor.get(7) : null;
+                this.dataCriacao = vetor.get(8) != null ? (LocalDate) vetor.get(8) : null;
+                this.dataModificacao = vetor.get(9) != null ? (LocalDate) vetor.get(9) : null;
+                System.out.println("VALORES DEFINIDOS COM SUCESSO! ");
+                return alterado;
+            } catch (Exception e) {
+                System.err.println("ERRO AO DEFINIR VALORES");
+                System.out.println(e.getMessage());
+                return false;
+            }
+
+        }
+    }
 
     public boolean criar(DAO dao, List<Object> vetor) {
         boolean alterado = false;
         if (dao != null) {
             this.dao = dao;
-    
-            // Busca noiva e noivo no DAO
+
             Pessoa noiva = dao.getNoivos(1);
             Pessoa noivo = dao.getNoivos(0);
-    
-            // Verifica se idIgreja é válido e preenche o campo se possível
+
             int idIgreja = Util.stringToInt((String) vetor.get(1));
             Igreja igreja = idIgreja != 0 ? (Igreja) dao.getItemByID(7, idIgreja) : null;
-    
-            // Verifica se idCartorio é válido e preenche o campo se possível
+
             int idCartorio = Util.stringToInt((String) vetor.get(2));
             Cartorio cartorio = idCartorio != 0 ? (Cartorio) dao.getItemByID(8, idCartorio) : null;
-    
-            // Verifica se idCerimonial é válido e preenche o campo se possível
+
             int idCerimonial = Util.stringToInt((String) vetor.get(3));
             Cerimonial cerimonial = idCerimonial != 0 ? (Cerimonial) dao.getItemByID(6, idCerimonial) : null;
-    
-            // Checa a existência dos itens, preenchendo apenas se existirem
+
             if (noiva != null) this.setNoiva(noiva);
             if (noivo != null) this.setNoivo(noivo);
             if (igreja != null) this.setIgreja(igreja);
             if (cartorio != null) this.setCartorio(cartorio);
             if (cerimonial != null) this.setCerimonial(cerimonial);
-    
-            // Converte a data caso fornecida no vetor
+
             if (vetor.get(0) != null && vetor.get(0) instanceof String) {
-                String data = (String) vetor.get(0);
+                String data = (String) vetor.getFirst();
                 DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    
+
                 try {
                     this.data = LocalDate.parse(data, formato);
                     alterado = true;
                 } catch (DateTimeParseException e) {
-                    // Log ou tratamento de erro
+                    System.err.println("evento.java metodo criar()\n Erro ao definir data " + e.getMessage());
                 }
             }
-    
+
             // Preenche o nome caso esteja presente no vetor
             if (vetor.get(4) != null && vetor.get(4) instanceof String) {
                 this.nome = (String) vetor.get(4);
             }
-    
+
             // Atualiza os dados de criação e modificação se houver alteração
             if (alterado) {
-                this.id = ++Evento.total;
+                this.id = this.dao.getTotalClasse(5) + 1;
                 this.dataCriacao = LocalDate.now();
                 this.dataModificacao = null;
             }
         }
-    
+
         return alterado;
     }
-    
-
 
 
     @Override
@@ -221,34 +213,33 @@ public class Evento implements InterfaceClasse {
     public String ler() {
         StringBuilder resultado = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        if (this.nome != null && this.nome.length() > 0) {
+        if (this.nome != null && !this.nome.isEmpty()) {
             resultado.append("\n");
             resultado.append("\n\nID: ").append(this.id);
-            resultado.append("  EVENTO: ").append(this.nome != null ? this.nome.toUpperCase() : "N/A");
-            // Formatação da data do evento
+            resultado.append("  EVENTO: ").append(this.nome.toUpperCase());
+
             if (this.data != null) {
                 resultado.append("\nData do Evento: ").append(this.data.format(formatter));
             }
             if (this.igreja != null) {
-                resultado.append("\n\nIgreja: ").append(this.igreja != null ? this.igreja.getNome() : "N/A");
+                resultado.append("\n\nIgreja: ").append(this.igreja.getNome());
                 resultado.append("\nEndereço da Igreja: ").append(this.igreja != null ? this.igreja.getEndereco() : "N/A");
             }
             if (this.cartorio != null) {
-                resultado.append("\n\nCartório: ").append(this.cartorio != null ? this.cartorio.getNome() : "N/A");
+                resultado.append("\n\nCartório: ").append(this.cartorio.getNome());
                 resultado.append("\nEndereço do Cartório: ").append(this.cartorio != null ? this.cartorio.getEndereco() : "N/A");
             }
             if (this.cerimonial != null) {
-                resultado.append("\n\nCerimonial: ").append(this.cerimonial != null ? this.cerimonial.getNome() : "N/A");
+                resultado.append("\n\nCerimonial: ").append(this.cerimonial.getNome());
             }
-            if (this.noiva != null && (this.igreja != null && this.cartorio != null )) {
+            if (this.noiva != null && (this.igreja != null && this.cartorio != null)) {
                 if (this.noivo != null) {
-                    resultado.append("\nNoiva: ").append(this.noiva != null ? this.noiva.getNome() : "N/A");
-                    resultado.append("\nNoivo: ").append(this.noivo != null ? this.noivo.getNome() : "N/A");
+                    resultado.append("\nNoiva: ").append(this.noiva.getNome());
+                    resultado.append("\nNoivo: ").append(this.noivo.getNome());
                 }
 
             }
-        
-            // Formatação da data de modificação
+
             if (this.dataModificacao != null) {
                 resultado.append("\nData da Última Modificação: ").append(this.dataModificacao.format(formatter));
             }
@@ -258,23 +249,21 @@ public class Evento implements InterfaceClasse {
     }
 
     public void update(List<Object> vetor) {
-        
+
         boolean alterou = false;
-        // Atualiza a data de nascimento (recebe como String e converte para LocalDate)
         if (vetor.get(1) != null && vetor.get(1) instanceof String) {
             String dataStr = (String) vetor.get(1);
-            if (dataStr.length() > 0) {
+            if (!dataStr.isEmpty()) {
                 try {
-                    // Define o formato da data esperado (por exemplo, "dd/MM/yyyy")
                     this.data = Util.stringToDate(dataStr);
                     alterou = true;
                 } catch (DateTimeParseException e) {
-                 }
+                }
             }
         }
         if (vetor.get(5) != null && vetor.get(5) instanceof String) {
             String nome = (String) vetor.get(5);
-            if (nome.length() > 0) {
+            if (!nome.isEmpty()) {
                 this.nome = nome;
                 alterou = true;
 
@@ -313,12 +302,101 @@ public class Evento implements InterfaceClasse {
             this.atualizarDataModificacao();
         }
     }
-    // Método para atualizar a data de modificação
+
+    public String getEndereco() {
+        if (this.getIgreja() != null) {
+            return this.getIgreja().getEndereco();
+        } else {
+            if (this.getCartorio() != null) {
+                return this.getCartorio().getEndereco();
+            }
+        }
+        return "N/A";
+    }
+
+    public void setCerimonial(Cerimonial cerimonial) {
+        if (this.cerimonial != null) {
+            this.cerimonial.setEventoVinculado(false);
+        }
+        if (cerimonial != null) {
+            this.cerimonial = cerimonial;
+            this.cerimonial.setEventoVinculado(true);
+            this.idCerimonial = this.cerimonial.getId();
+            this.dataModificacao = LocalDate.now();
+        }
+    }
+
+    public Igreja getIgreja() {
+        return this.igreja;
+    }
+
+    public void setCartorio(Cartorio cartorio) {
+        if (this.cartorio != null) {
+            this.cartorio.setEventoVinculado(false);
+        }
+        if (cartorio != null) {
+            this.cartorio = cartorio;
+            this.cartorio.setEventoVinculado(true);
+            this.idCartorio = this.cartorio.getId();
+            this.dataModificacao = LocalDate.now();
+        }
+    }
+
+    public void setIgreja(Igreja igreja) {
+        if (this.igreja != null) {
+            this.igreja.setEventoVinculado(false);
+        }
+        if (igreja != null) {
+            this.igreja = igreja;
+            this.igreja.setEventoVinculado(true);
+            this.idIgreja = this.igreja.getId();
+            this.dataModificacao = LocalDate.now();
+        }
+    }
+
+
+    public void setNoiva(Pessoa noiva) {
+        if (noiva != null
+                && noiva.getTipo().equalsIgnoreCase("NOIVA")) {
+            this.noiva = noiva;
+            this.idNoiva = this.noiva.getId();
+            this.dataModificacao = LocalDate.now();
+        }
+
+    }
+
+    public Pessoa getNoivo() {
+        return this.noivo;
+    }
+
+    public void setNoivo(Pessoa noivo) {
+        if (noivo != null
+                && noivo.getTipo().equalsIgnoreCase("NOIVO")) {
+            this.noivo = noivo;
+            this.idNoivo = this.noivo.getId();
+            this.dataModificacao = LocalDate.now();
+        }
+    }
+
+    public LocalDate getData() {
+        return this.data;
+    }
+
+    public void setData(LocalDate data) {
+        this.data = data;
+        this.dataModificacao = LocalDate.now();
+    }
+
     public void atualizarDataModificacao() {
         this.dataModificacao = LocalDate.now();
     }
+
     public String getNome() {
         return nome;
+    }
+
+    public Cartorio getCartorio() {
+        return this.cartorio;
     }
 
     public void setNome(String nome) {
@@ -326,6 +404,10 @@ public class Evento implements InterfaceClasse {
     }
 
     public static int total;
+
+    public Pessoa getNoiva() {
+        return this.noiva;
+    }
 
     public int getIdIgreja() {
         return idIgreja;
@@ -386,5 +468,13 @@ public class Evento implements InterfaceClasse {
 
     public Cerimonial getCerimonial() {
         return this.cerimonial;
+    }
+
+    public LocalDate getDataCriacao() {
+        return this.dataCriacao;
+    }
+
+    public LocalDate getDataModificacao() {
+        return this.dataModificacao;
     }
 }

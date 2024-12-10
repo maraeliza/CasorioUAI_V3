@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Cerimonial implements InterfaceClasse {
+public class Cerimonial implements InterfaceClasse, InterfaceBanco {
 
     private int id;
     private int idUsuario;
@@ -39,18 +39,96 @@ public class Cerimonial implements InterfaceClasse {
 
         return campos;
     }
+    @Override
+    public String getNomeTabela() {
+        return "tb_cerimonial";
+    }
+    public static String getNomeTabelaByClass() {
+        return "tb_cerimonial";
+    }
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("idUsuario");
+        campos.add("idPessoa");
+        campos.add("nome");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        campos.add("eventoVinculado");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.idUsuario);
+        valores.add(this.idPessoa);
+        valores.add(this.nome);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        valores.add(this.eventoVinculado);
+        return valores;
+    }
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        System.out.println(vetor);
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null;
+        if (!alterado) {
+            return false;
+        } else {
+            this.dao = dao;
+            this.id = (int) vetor.get(0);
+            int idUsuario = (int) vetor.get(1);
+            int idPessoa = (int) vetor.get(2);
+
+            Object objUsuario = this.dao.getItemByID(1, idUsuario);
+            if (objUsuario instanceof Usuario) {
+                if (this.dao.getBanco().findByItem((InterfaceBanco) objUsuario)) {
+                    this.user = (Usuario) objUsuario;
+                    this.idUsuario = idUsuario;
+                    // Relacionamento com TB_PESSOA
+                    Object objPessoa = this.dao.getItemByID(2, idPessoa);
+                    if (objPessoa instanceof Pessoa) {
+                        if (this.dao.getBanco().findByItem((InterfaceBanco) objPessoa)) {
+                            this.pessoa = (Pessoa) objPessoa;
+                            this.idPessoa = idPessoa;
+                        } else {
+                            System.err.println("Pessoa de id "+idPessoa+" nao encontrada no banco.");
+                            return false;
+                        }
+                    }
+                } else {
+                    System.err.println("Usuario de id "+idUsuario+" nao encontrado no banco.");
+                    return false;
+                }
+            }
+
+
+
+            this.nome = (String) vetor.get(3);
+            this.dataCriacao = (LocalDate) vetor.get(4);
+            this.dataModificacao = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
+            this.eventoVinculado = (Boolean) vetor.get(6);
+
+            return true;
+        }
+    }
+
+
 
     public boolean criar(DAO dao, List<Object> vetor) {
         this.dao = dao;
         boolean alterado = false;
         if (this.dao != null) {
 
-            int idPessoaC = Util.stringToInt((String) vetor.get(0));
+            int idPessoaC = Util.stringToInt((String) vetor.getFirst());
             Pessoa p = (Pessoa) this.dao.getItemByID(2, idPessoaC);
             if (p != null) {
 
                 if (!p.isCerimonialVinculado()
-                        && p.getTipo().toUpperCase().equals("CERIMONIAL")
+                        && p.getTipo().equalsIgnoreCase("CERIMONIAL")
                         && !p.isUserVinculado()) {
 
                     this.trocarPessoa(idPessoaC, p);
@@ -58,7 +136,7 @@ public class Cerimonial implements InterfaceClasse {
                     try {
                         this.dao.cadastrar(3, userDados);
                     } catch (Exception e) {
-
+                        System.err.println("Nao foi possivel cadastrar cerimonial !\n"+e.getMessage());
                     }
 
                     Usuario user = this.dao.getUserByIdPessoa(p.getId());
@@ -71,7 +149,7 @@ public class Cerimonial implements InterfaceClasse {
                     if (alterado) {
                         this.dataCriacao = LocalDate.now();
                         this.dataModificacao = null;
-                        this.id = ++Cerimonial.total; // Supondo que 'total' é um contador de IDs
+                        this.id = this.dao.getTotalClasse(6) +1; // Supondo que 'total' é um contador de IDs
                     }
 
                 } else {
@@ -98,7 +176,7 @@ public class Cerimonial implements InterfaceClasse {
         Pessoa p = (Pessoa) this.dao.getItemByID(2, idPessoaC);
         if (p != null) {
             if (!p.isCerimonialVinculado() && !p.isUserVinculado()
-                    && p.getTipo().toUpperCase().equals("CERIMONIAL")) {
+                    && p.getTipo().equalsIgnoreCase("CERIMONIAL")) {
                 this.trocarPessoa(idPessoaC, p);
 
                 ArrayList<Object> userDados = new ArrayList<>(Arrays.asList((String) vetor.get(1), p.getNome().toUpperCase(), "senhaCasorioUai"));
@@ -253,10 +331,7 @@ public class Cerimonial implements InterfaceClasse {
         this.user = user;
     }
 
-    // Getters e Setters
-    public int getId() {
-        return this.id;
-    }
+
 
     public void setId(int id) {
         this.id = id;
@@ -278,7 +353,10 @@ public class Cerimonial implements InterfaceClasse {
         this.nome = nome;
         this.dataModificacao = LocalDate.now();
     }
-
+    @Override
+    public int getId() {
+        return this.id;
+    }
     public LocalDate getDataCriacao() {
         return this.dataCriacao;
     }

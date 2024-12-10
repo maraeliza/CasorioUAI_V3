@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Parcela implements InterfaceClasse {
+public class Parcela implements InterfaceClasse, InterfaceBanco {
 
     private int id;
 
@@ -31,7 +31,7 @@ public class Parcela implements InterfaceClasse {
     private int nTotal;
     private LocalDate dataCriacao;
     private LocalDate dataModificacao;
-    private Usuario user;
+
     private DAO dao;
 
     private static int total;
@@ -40,6 +40,73 @@ public class Parcela implements InterfaceClasse {
         this.pago = false;
         this.agendado = false;
     }
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("idDespesa");
+        campos.add("nome");
+        campos.add("valor");
+        campos.add("dataVencimento");
+        campos.add("dataPagamento");
+        campos.add("dataAgendamento");
+        campos.add("pago");
+        campos.add("agendado");
+        campos.add("status");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.idDespesa);
+        valores.add(this.nome);
+        valores.add(this.valor);
+        valores.add(this.dataVencimento);
+        valores.add(this.dataPagamento);
+        valores.add(this.dataAgendamento);
+        valores.add(this.pago);
+        valores.add(this.agendado);
+        valores.add(this.status);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        return valores;
+    }
+
+    @Override
+    public String getNomeTabela() {
+        return "TB_PARCELA";
+    }
+    public static String getNomeTabelaByClass() {
+        return "TB_PARCELA";
+    }
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null;
+        if (!alterado) {
+            return alterado;
+        } else {
+            this.dao = dao;
+            this.id = (int) vetor.get(0);
+            this.idDespesa = (int) vetor.get(1);
+            this.nome = (String) vetor.get(2);
+            this.valor = (double) vetor.get(3);
+            this.dataVencimento = (LocalDate) vetor.get(4);
+            this.dataPagamento = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
+            this.dataAgendamento = vetor.get(6) != null ? (LocalDate) vetor.get(6) : null;
+            this.pago = (boolean) vetor.get(7);
+            this.agendado = (boolean) vetor.get(8);
+            this.status = (String) vetor.get(9);
+            this.dataCriacao = (LocalDate) vetor.get(10);
+            this.dataModificacao = vetor.get(11) != null ? (LocalDate) vetor.get(11) : null;
+            return alterado;
+        }
+    }
+
+
 
     public static String[] getCampos() {
         String[] campos = new String[10];
@@ -49,6 +116,7 @@ public class Parcela implements InterfaceClasse {
         campos[3] = "VALOR: ";
         return campos;
     }
+
 
     @Override
     public boolean criar(DAO dao, List<Object> vetor) {
@@ -404,13 +472,6 @@ public class Parcela implements InterfaceClasse {
         this.nTotal = nTotal;
     }
 
-    public Usuario getUser() {
-        return user;
-    }
-
-    public void setUser(Usuario user) {
-        this.user = user;
-    }
 
     public int getNTotal() {
         return this.nTotal;

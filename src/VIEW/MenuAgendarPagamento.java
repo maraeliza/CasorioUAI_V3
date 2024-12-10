@@ -143,7 +143,7 @@ public class MenuAgendarPagamento {
             if (idInserido != 0) {
 
                 try {
-                    boolean existe = this.dao.find(12, idInserido);
+                    boolean existe = this.dao.isInList(12, idInserido);
                     if (existe) {
                         this.setIdDespesa(idInserido);
                         if (this.getDespesa() != null) {

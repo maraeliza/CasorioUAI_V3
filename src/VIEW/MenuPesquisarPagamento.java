@@ -60,7 +60,7 @@ public class MenuPesquisarPagamento {
             if (idInserido != 0) {
                 this.valores[0] = result;
                 try {
-                    boolean existe = this.dao.find(this.idClasse, idInserido);
+                    boolean existe = this.dao.isInList(this.idClasse, idInserido);
                     if (existe) {
                         Presente presente = (Presente) this.dao.getItemByID(idClasse, idInserido);
                         if (presente != null && presente.getEscolhido()) {
