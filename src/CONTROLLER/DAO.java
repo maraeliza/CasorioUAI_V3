@@ -63,7 +63,10 @@ public class DAO {
                 this.todosOsVetores.add(new ArrayList<>());
             }
             for (NomeClasse nomeClasse : NomeClasse.values()) {
-                if (!nomeClasse.equals(NomeClasse.EVENTO) && !nomeClasse.equals(NomeClasse.CONVIDADO_INDIVIDUAL)) {
+                if (!nomeClasse.equals(NomeClasse.EVENTO)
+                        && !nomeClasse.equals(NomeClasse.CONVIDADO_INDIVIDUAL)
+                        && !nomeClasse.equals(NomeClasse.PARCELAS)
+                ) {
                     this.syncVetorBanco(nomeClasse);
                 }
             }
@@ -275,7 +278,13 @@ public class DAO {
                         this.todosOsVetores.get(idClasse).clear();
                         for (Object elem : vetorBanco) {
                             this.todosOsVetores.get(idClasse).add(elem);
+                            if(idClasse == 12){
+                                if (((Despesa) elem).isParcelado()) {
+                                    ((Despesa) elem).criarParcelas();
+                                }
+                            }
                         }
+
                     } else {
                         System.out.println("Nenhum item da classe " + nomeClasse + " foi encontrado no banco");
                     }
@@ -329,21 +338,12 @@ public class DAO {
                     }
                 }
                 if (idClasse == 12) {
+                    System.out.println("----------------------CADASTRANDO PARCELAS DE DESPESA--------------------");
                     if (objeto instanceof Despesa) {
                         Despesa despesa = (Despesa) objeto;
                         if (despesa.isParcelado()) {
                             despesa.criarParcelas();
-                            for (Parcela p : despesa.getvParcelas()) {
-
-                                if (!this.banco.findByItem(p)) {
-                                    this.banco.addItemBanco(p);
-                                    this.addVetor(13, p);
-                                    String sql = "insert into tb_despesa_parcela (id_parcela, id_despesa) values(" + p.getId() + "," + despesa.getId() + " )";
-                                    System.out.println("INSERINDO RELACIONAMENTO ENTRE TABELA DESPESA E PARCELA");
-                                    this.getBanco().executeSQL(sql);
-                                }
-
-                            }
+                            despesa.addVParcelaNoBanco();
                         }
                     }
                 }
@@ -360,21 +360,6 @@ public class DAO {
         }
     }
 
-    public Parcela cadastrarParcela(List<Object> infos) {
-        boolean criado = false;
-        try {
-            Parcela objeto = new Parcela();
-            criado = objeto.criar(this, infos);
-            if (criado) {
-                this.addVetor(13, objeto);
-                return objeto;
-            } else {
-                return null;
-            }
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     public void atualizar(int idClasse, List<Object> infos) {
         int id = Util.stringToInt((String) infos.getFirst());
@@ -440,43 +425,72 @@ public class DAO {
     }
 
     public boolean delItemByID(int idClasse, int id) {
+        System.out.println("\n\n\n---------------------------DELETANDO-----------------------------------");
+        System.out.println("Iniciando exclusão de item. Classe ID: " + idClasse + ", Item ID: " + id);
+
         for (Object elem : this.getVectorByClassName(NomeClasse.values()[idClasse])) {
+            System.out.println("Verificando elemento: " + elem);
+
             if (elem instanceof InterfaceClasse item) {
+                System.out.println("Elemento é uma instância de InterfaceClasse. ID do item: " + item.getId());
+
                 if (item.getId() == id) {
+                    System.out.println("Item encontrado. Tentando deletar...");
+
                     boolean podeApagar = item.deletar();
+                    System.out.println("Resultado da exclusão do item: " + podeApagar);
+
                     if (podeApagar) {
                         int posicao = this.getVectorByClassName(NomeClasse.values()[idClasse]).indexOf(item);
-                        this.removeFromList(idClasse, posicao);
-                        if (elem instanceof InterfaceBanco objB) {
-                            if (this.banco.findByItem(objB)) {
-                                String nomeTabela = this.getNomeTabelaByID(idClasse);
-                                try {
-                                    this.banco.delItemBancoByID(nomeTabela, id);
+                        System.out.println("Posição do item na lista: " + posicao);
 
+                        this.removeFromList(idClasse, posicao);
+                        System.out.println("Item removido da lista.");
+
+                        if (elem instanceof InterfaceBanco objB) {
+                            System.out.println("Elemento é uma instância de InterfaceBanco.");
+
+                            if (this.banco.findByItem(objB)) {
+                                System.out.println("Item encontrado no banco. Preparando para exclusão...");
+
+                                String nomeTabela = this.getNomeTabelaByID(idClasse);
+                                System.out.println("Nome da tabela: " + nomeTabela);
+
+                                try {
                                     if (idClasse == 12) {
+                                        System.out.println("Classe identificada como 'Despesa'. Excluindo parcelas associadas...");
+
                                         for (Parcela p : ((Despesa) objB).getvParcelas()) {
+                                            System.out.println("Processando parcela ID: " + p.getId());
+
                                             int posParcela = this.getVectorByClassName(NomeClasse.PARCELAS).indexOf(p);
+                                            System.out.println("Posição da parcela na lista: " + posParcela);
+
                                             this.removeFromList(13, posParcela);
                                             this.banco.delItemBancoByID("tb_parcela", p.getId());
+                                            System.out.println("Parcela removida do banco e da lista.");
                                         }
                                     }
-                                } catch (SQLException e) {
-                                    System.out.println("DAO.java delItemByID (erro ao deletar do banco de dados) \n" + e.getMessage());
+
+                                    this.banco.delItemBancoByID(nomeTabela, id);
+                                    System.out.println("Item removido do banco de dados. Tabela: " + nomeTabela + ", ID: " + id);
+
                                 } catch (Exception e) {
-                                    System.out.println("DAO.java delItemByID \n" + e.getMessage());
+                                    System.out.println("Erro ao tentar deletar item no banco de dados: " + e.getMessage());
                                 }
-
-
                             } else {
                                 System.out.println("Objeto não está cadastrado no banco!");
                             }
                         }
-                    }
 
-                    return podeApagar;
+                        return podeApagar;
+                    }
                 }
             }
         }
+
+        System.out.println("Item não encontrado ou não pôde ser apagado.");
+
         return false;
     }
 

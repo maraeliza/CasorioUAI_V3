@@ -100,7 +100,10 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             return alterado;
         } else {
             this.dao = dao;
+            System.out.println("\n\n--------------------------DEFININDO ID DA PARCELA ");
             this.id = vetor.get(0) != null ? (int) vetor.get(0) : 0;
+            System.out.println("---------------CRIAR OBJETO DO BANCO------------------\nID NO BANCO"+vetor.get(0));
+            System.out.println("ID definindo é "+this.id+"\n\n ");
             int idDespesa = vetor.get(1) != null ? (int) vetor.get(1) : 0;
             Object objB = this.dao.getBanco().getItemByIDBanco(12, idDespesa);
             if(objB != null){
@@ -140,8 +143,9 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criar(DAO dao, List<Object> vetor) {
-
+        System.out.println("CRIANDO PARCELA !");
         this.dao = dao;
+        System.out.println(vetor);
         boolean alterado = false;
 
         if (vetor.get(0) != null) {
@@ -151,14 +155,15 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             if (this.idDespesa != 0) {
 
                 Despesa despesa = (Despesa) this.dao.getItemByID(12, this.idDespesa);
-
+                System.out.println("ACESSANDO DESPESA----------------------------------");
+                System.out.println(despesa);
                 if (despesa != null) {
 
                     this.setDespesa(despesa);
 
                     if (vetor.get(1) != null) {
                         this.dataVencimento = (LocalDate) vetor.get(1);
-
+                        System.out.println("dads !");
                         if (vetor.get(2) != null) {
 
                             double valorFormatado = (double) vetor.get(2);
@@ -177,8 +182,10 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
                             alterado = true;
 
-                            // Atribui o ID único e define as datas de criação e modificação
+                            System.out.println("\n\n--------------------------DEFININDO ID DA PARCELA ");
                             this.id = this.dao.getTotalClasse(13) + 1;
+                            System.out.println("---------------CRIAR()------------------\nTOTAL NA CLASSE"+this.id);
+                            System.out.println("ID definindo é "+this.id+"\n\n ");
                             this.dataCriacao = LocalDate.now();
                             this.dataModificacao = null; // Nenhuma modificação inicial
                             this.pago = false;

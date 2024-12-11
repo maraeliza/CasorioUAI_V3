@@ -94,6 +94,7 @@ public class MenuAgendarPagamento {
                                 if (this.getParcela().isAgendado()) {
                                     //cancela agendamento
                                     this.getParcela().cancelarAgendamento();
+                                    this.dao.getBanco().updateItemBanco(this.getParcela());
                                     this.verResultado(13);
                                 } else {
                                     //senão, pede a data de agendamento
@@ -103,11 +104,14 @@ public class MenuAgendarPagamento {
                                     if (hoje.isBefore(data)) {
                                         //se sim, realiza o agendamento
                                         this.getParcela().agendar(data);
+                                        this.dao.getBanco().updateItemBanco(this.getParcela());
                                         this.dao.mostrarPagamentosAgendados();
                                         this.criarMenuCRUD(this.dao, 11);
                                     }
 
                                 }
+
+
                             }
 
                         }

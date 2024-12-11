@@ -133,7 +133,7 @@ public class Banco {
 
     }
 
-    public void delItemBancoByID(String nomeTabela, int id) throws SQLException {
+    public void delItemBancoByID(String nomeTabela, int id) {
         this.executeSQL(this.montarDeleteByIDSQL(nomeTabela, id));
     }
 
@@ -219,7 +219,6 @@ public class Banco {
                             }
 
                         }
-
                         boolean criado = ((InterfaceBanco) objeto).criarObjetoDoBanco(this.dao, infos);
                         if (criado) {
                             return objeto;
@@ -246,7 +245,7 @@ public class Banco {
 
     }
 
-    public void executeSQL(String sql) throws SQLException {
+    public void executeSQL(String sql)  {
         try (Connection conexao = DriverManager.getConnection(this.con, this.properties);) {
             Statement stmt = conexao.createStatement();
             int linhasAfetadas = stmt.executeUpdate(sql);
@@ -255,7 +254,7 @@ public class Banco {
             }
         } catch (SQLException e) {
             System.err.println("banco.java executeSQL \n Erro ao executar SQL: " + e.getMessage());
-            throw e;
+
         }
     }
 

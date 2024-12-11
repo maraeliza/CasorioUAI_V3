@@ -8,6 +8,7 @@ import CONTROLLER.DAO;
 import VIEW.Menu_READ;
 import VIEW.Util;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -102,8 +103,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
         return "TB_DESPESA";
     }
 
-    @Override
-    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+    @Override    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+
         this.getvParcelas().clear();
         boolean alterado = vetor.get(0) != null;
         if (!alterado) {
@@ -183,7 +184,6 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
                         if (this.getnParcelas() > 1 && !((String) vetor.get(5)).equals("0")) {
                             this.setParcelado(true);
                             this.setDataPrimeiroVencimento((String) vetor.get(5));
-
                         } else {
                             this.setParcelado(false);
                         }
@@ -209,29 +209,42 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
     }
 
     public void criarParcelas() {
+
         Double valor = this.getValorTotal() / this.getnParcelas();
         this.vParcelas = new ArrayList<>();
         for (int i = 0; i < this.getnParcelas(); i++) {
             LocalDate dataVencimento = this.getDataPrimeiroVencimento().plusMonths(i);
             List<Object> infos = new ArrayList<>(Arrays.asList(this.getId(), dataVencimento, valor, i + 1, this.getnParcelas(), this.getNome()));
-            Parcela p = this.dao.cadastrarParcela( infos);
-            if (p != null) {
-                this.add(p);
+            try {
+                Parcela objeto = new Parcela();
+                boolean criado = objeto.criar(this.dao, infos);
+                System.out.println("PARCELA CRIADA? "+criado);
+                if (criado) {
+                    System.out.println("ADD EM VPARCELAS " + this.vParcelas.size());
+                    this.vParcelas.add(objeto);
+                    System.out.println("ADICIONADO!!" + this.vParcelas.size());
+                    this.dao.addVetor(13, objeto);
 
+                }
+            } catch (Exception e) {
+                System.err.println("Erro ao criar parcela: " + e.getMessage());
             }
-
         }
         LocalDate dataVencimento = this.getDataPrimeiroVencimento().plusMonths(this.getnParcelas() - 1);
         this.setDataUltimoVencimento(dataVencimento);
 
     }
 
-    public boolean add(Parcela p) {
-        this.vParcelas.add(p);
-        return false;
+    public void addVParcelaNoBanco() {
+        for (Parcela objeto : this.getvParcelas()) {
+            if (!this.dao.getBanco().findByItem(objeto)) {
+                this.dao.getBanco().addItemBanco(objeto);
+            }
+        }
     }
 
-    public boolean trocarFornecedor(int idFornecedor) {
+
+    public void trocarFornecedor(int idFornecedor) {
         if (idFornecedor != 0) {
             Fornecedor fornecedor = (Fornecedor) this.dao.getItemByID(4, idFornecedor);
 
@@ -241,12 +254,10 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
                     this.setIdFornecedor(idFornecedor);
                     this.setFornecedor(fornecedor);
                     this.getFornecedor().atualizarValores();
-                    return true;
                 }
             }
         }
 
-        return false;
     }
 
     public boolean deletar() {
