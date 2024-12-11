@@ -134,8 +134,8 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
                 if (objFornecedor != null && dao.getBanco().findByItem((InterfaceBanco) objFornecedor)) {
                     this.fornecedor = (Fornecedor) objFornecedor;
                     this.idFornecedor = idFornecedor;
-                }
 
+                }
 
                 this.valor = (double) vetor.get(9);
                 this.nParcela = (int) vetor.get(10);
@@ -152,84 +152,36 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
         }
     }
 
-
     public static String[] getCampos() {
         String[] campos = new String[10];
         campos[0] = "ID: ";
         campos[1] = "ID DO FORNECEDOR (0 PARA NENHUM FORNECEDOR): ";
-        campos[2] = "DATA DO PAGAMENTO (DD/MM/YYYY): ";
-        campos[3] = "DESCRIÇÃO: ";
-        campos[4] = "VALOR: ";
+        campos[2] = "DESCRIÇÃO: ";
+        campos[3] = "VALOR: ";
 
         return campos;
     }
 
-    public boolean trocarDespesa(int id, Despesa despesa) {
-
-        if ((this.getIdDespesa() == 0 || this.getIdDespesa() != id)
-                && despesa != null) {
-            this.setIdDespesa(id);
-            this.setDespesa(despesa);
-
-            return true;
-        }
-        return false;
-    }
-
-    public boolean trocarParcela(int id, Parcela parcela) {
-
-        if ((this.getIdParcela() == 0 || this.getIdParcela() != id)
-                && parcela != null) {
-
-            this.setIdParcela(id);
-            this.setParcela(parcela);
-
-            return true;
-        }
-        return false;
-    }
-
-    public boolean trocarPessoa(int idPessoa, Pessoa p) {
-
-        //checa se o id é diferente
-        if ((this.getIdPessoa() == 0 || this.getIdPessoa() != idPessoa)
-                && p != null) {
-
-            this.setPessoa(p);
-
-            return true;
-        }
-        return false;
-    }
-
-    public boolean trocarFornecedor(int idFornecedor) {
-        if (idFornecedor != 0) {
-            Fornecedor fornecedor = (Fornecedor) this.dao.getItemByID(4, idFornecedor);
-
-            if (fornecedor != null) {
-                //checa se o id é diferente
-                if (this.getIdFornecedor() == 0 || this.getIdFornecedor() != idFornecedor) {
-                    System.out.println("Vinculando o fornecedor " + fornecedor.getNome() + " ao pagamento ");
-                    this.setIdFornecedor(idFornecedor);
-                    this.setFornecedor(fornecedor);
-                    this.getFornecedor().atualizarValores();
-
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     public boolean criar(DAO dao, List<Object> vetor) {
-        System.out.println("Lançando pagamento!");
         this.dao = dao;
         boolean alterado = false;
         if (this.dao != null) {
+            for (int i = 0; i < vetor.size(); i++){
+                System.out.println(" ID "+i+ " "+vetor.get(i));
+            }
+            if(vetor.size() >= 7){
+                this.data = vetor.get(6) != null ? (LocalDate) vetor.get(6) : null;
+
+            }else{
+                this.data = LocalDate.now();
+            }
             Pessoa pessoa = null;
             if (this.dao.getUserLogado() != null) {
-                pessoa = this.dao.getUserLogado().getPessoa();
+                this.user = this.dao.getUserLogado();
+                this.idUser = this.user.getId();
+                this.pessoa = this.dao.getUserLogado().getPessoa();
+                this.idPessoa = this.getPessoa().getId();
+
             } else {
                 pessoa = (Pessoa) this.dao.getItemByID(2, 0);
             }
@@ -240,61 +192,46 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
             int idFornecedor = 0;
 
             if (vetor.get(0) instanceof String) {
-                // Converte o elemento para String e então para int
-                idFornecedor = Util.stringToInt((String) vetor.get(0));
-            } else if (vetor.get(0) instanceof Integer) {
-                // Faz o cast direto para int se o elemento já for Integer
-                idFornecedor = (Integer) vetor.get(0);
+                idFornecedor = Util.stringToInt((String) vetor.getFirst());
+            } else if (vetor.getFirst() instanceof Integer) {
+                idFornecedor = (Integer) vetor.getFirst();
             } else {
-                throw new IllegalArgumentException("Tipo não suportado no vetor.get(0)");
+                throw new IllegalArgumentException("Tipo não suportado no vetor.getFirst()");
             }
             if (idFornecedor != 0) {
 
                 this.trocarFornecedor(idFornecedor);
 
             }
-            if (vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null) {
+            if (vetor.getFirst() != null && vetor.get(1) != null && vetor.get(2) != null) {
 
-                if (vetor.get(1) instanceof String) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                    String dateStr = (String) vetor.get(1);
-                    this.data = LocalDate.parse(dateStr, formatter);
+                this.descricao = (String) vetor.get(1); // Descrição
 
-                } else if (vetor.get(1) instanceof LocalDate) {
-                    this.data = (LocalDate) vetor.get(1);
+                double valor;
 
+                if (vetor.get(2) instanceof String) {
+                    valor = Util.stringToDouble((String) vetor.get(2));
+                } else if (vetor.get(2) instanceof Double) {
+                    valor = (Double) vetor.get(2);
+                } else if (vetor.get(2) instanceof Integer) {
+                    valor = ((Integer) vetor.get(2)).doubleValue();
                 } else {
-                    throw new IllegalArgumentException("Tipo não suportado no vetor.get(0)");
+                    throw new IllegalArgumentException("Tipo não suportado no vetor.get(3)");
+                }
+                if (valor > 0) {
+                    this.setValor(valor);
                 }
 
-                if (this.dao.getDataHoje().isBefore(this.data)) {
-                    System.out.println("Não foi possível cadastrar pagamento para o futuro, se deseja agendar, lance uma despesa e agende o pagamento!");
-                    alterado = false;
-                } else {
-                    this.descricao = (String) vetor.get(2); // Descrição
+                if (vetor.size() > 3) {
 
-                    double valor;
-
-                    if (vetor.get(3) instanceof String) {
-                        valor = Util.stringToDouble((String) vetor.get(3));
-                    } else if (vetor.get(3) instanceof Double) {
-                        valor = (Double) vetor.get(3);
-                    } else if (vetor.get(3) instanceof Integer) {
-                        valor = ((Integer) vetor.get(3)).doubleValue();
-                    } else {
-                        throw new IllegalArgumentException("Tipo não suportado no vetor.get(3)");
-                    }
-                    if (valor > 0) {
-                        this.setValor(valor);
-                    }
-                    if (vetor.get(5) != null) {
+                    if (vetor.get(4) != null) {
                         int idDespesa;
-                        if (vetor.get(5) instanceof String) {
-                            idDespesa = Util.stringToInt((String) vetor.get(5));
-                        } else if (vetor.get(5) instanceof Integer) {
-                            idDespesa = (Integer) vetor.get(5);
+                        if (vetor.get(4) instanceof String) {
+                            idDespesa = Util.stringToInt((String) vetor.get(4));
+                        } else if (vetor.get(4) instanceof Integer) {
+                            idDespesa = (Integer) vetor.get(4);
                         } else {
-                            throw new IllegalArgumentException("Tipo não suportado no vetor.get(5)");
+                            throw new IllegalArgumentException("Tipo não suportado no vetor.get(4)");
                         }
                         Despesa despesa = (Despesa) dao.getItemByID(12, idDespesa);
 
@@ -303,16 +240,16 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
                             this.trocarDespesa(despesa.getId(), despesa);
                         }
                     }
-                    if (vetor.get(6) != null) {
+                    if (vetor.get(5) != null) {
 
                         int idParcela;
 
-                        if (vetor.get(6) instanceof String) {
-                            idParcela = Util.stringToInt((String) vetor.get(6));
-                        } else if (vetor.get(6) instanceof Integer) {
-                            idParcela = (Integer) vetor.get(6);
+                        if (vetor.get(5) instanceof String) {
+                            idParcela = Util.stringToInt((String) vetor.get(5));
+                        } else if (vetor.get(5) instanceof Integer) {
+                            idParcela = (Integer) vetor.get(5);
                         } else {
-                            throw new IllegalArgumentException("Tipo não suportado no vetor.get(6)");
+                            throw new IllegalArgumentException("Tipo não suportado no vetor.get(5)");
                         }
 
                         Parcela parcela = (Parcela) dao.getItemByID(13, idParcela);
@@ -321,12 +258,12 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
                             this.trocarParcela(parcela.getId(), parcela);
 
                             int nParcela = 0;
-                            if (vetor.get(4) instanceof String) {
-                                nParcela = Util.stringToInt((String) vetor.get(4));
-                            } else if (vetor.get(4) instanceof Integer) {
-                                nParcela = (Integer) vetor.get(4);
+                            if (vetor.get(3) instanceof String) {
+                                nParcela = Util.stringToInt((String) vetor.get(3));
+                            } else if (vetor.get(3) instanceof Integer) {
+                                nParcela = (Integer) vetor.get(3);
                             } else {
-                                throw new IllegalArgumentException("Tipo não suportado no vetor.get(0)");
+                                throw new IllegalArgumentException("Tipo não suportado no vetor.getFirst()");
                             }
                             if (nParcela != 0) {
                                 this.setnParcela(nParcela);
@@ -334,32 +271,22 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
 
                         }
                     }
-
-                    alterado = true;
                 }
+
+                alterado = true;
+
 
             }
             if (alterado) {
-                System.out.println(alterado + " = "+vetor);
+
                 this.id = this.dao.getTotalClasse(11) + 1;
                 this.dataCriacao = LocalDate.now();
                 this.dataModificacao = null;
             }
 
         }
-        System.out.println(alterado +" = "+vetor);
+
         return alterado;
-    }
-
-    public boolean deletar() {
-        if (this.idDespesa != 0) {
-            this.despesa.cancelarPagamento();
-        }
-        if (this.idParcela != 0) {
-            this.parcela.cancelarPagamento();
-        }
-
-        return true;
     }
 
     public String ler() {
@@ -413,21 +340,17 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
         return resultado.toString();
     }
 
-    // Método para verificar e atualizar o estado do pagamento
     public void verificarPagamentoAgendado() {
         LocalDate hoje = LocalDate.now();
         if (data.isEqual(hoje) && valor > 0) {
-            // Lógica para atualizar o estado do pagamento
-            // Se for uma parcela única ou se todas as parcelas foram pagas
-            if (this.nParcela == 1 || valor <= 0) {
-                // Atualizar o estado do fornecedor
+            if (this.nParcela == 1) {
                 this.fornecedor.setEstado(1);
             }
         }
     }
 
     public void update(List<Object> vetor) {
-        System.out.println(" " + vetor.get(0) + " " + vetor.get(1) + " " + vetor.get(2) + " " + vetor.get(3) + " " + vetor.get(4) + " " + vetor.get(5) + " " + vetor.get(6));
+
         boolean alterou = false;
         if (vetor.get(1) != null || !vetor.get(1).equals('0')) {
             int idFornecedor = Util.stringToInt((String) vetor.get(1));
@@ -435,35 +358,85 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
                 this.trocarFornecedor(idFornecedor);
             }
         }
-
-        // Verifica e atualiza data do pagamento (vetor.get(3))
         if (vetor.get(2) != null && !((String) vetor.get(2)).isEmpty()) {
             this.data = Util.stringToDate((String) vetor.get(2));
-
             alterou = true;
         }
 
-        // Verifica e atualiza descrição (vetor.get(4))
         if (vetor.get(3) != null && !((String) vetor.get(3)).isEmpty()) {
             this.descricao = (String) vetor.get(3);
-
             alterou = true;
         }
 
-        // Verifica e atualiza valor (vetor.get(5))
         if (vetor.get(4) != null && !((String) vetor.get(4)).isEmpty()) {
             this.valor = Util.stringToDouble((String) vetor.get(4));
-
             alterou = true;
         }
-        // Atualiza a data de modificação caso tenha havido alguma alteração
         if (alterou) {
             this.atualizarDataModificacao();
         }
     }
 
-    public void atualizarDataModificacao() {
+    public void trocarDespesa(int id, Despesa despesa) {
+        if ((this.getIdDespesa() == 0 || this.getIdDespesa() != id)
+                && despesa != null) {
+            this.setIdDespesa(id);
+            this.setDespesa(despesa);
+        }
+    }
 
+    public void trocarParcela(int id, Parcela parcela) {
+        if ((this.getIdParcela() == 0 || this.getIdParcela() != id)
+                && parcela != null) {
+            this.setIdParcela(id);
+            this.setParcela(parcela);
+        }
+    }
+
+    public void trocarPessoa(int idPessoa, Pessoa p) {
+        if ((this.getIdPessoa() == 0 || this.getIdPessoa() != idPessoa)
+                && p != null) {
+            this.setPessoa(p);
+
+        }
+    }
+
+    public void trocarFornecedor(int idFornecedor) {
+        if (idFornecedor != 0) {
+            Fornecedor fornecedor = (Fornecedor) this.dao.getItemByID(4, idFornecedor);
+
+            if (fornecedor != null) {
+                if (this.getIdFornecedor() == 0 || this.getIdFornecedor() != idFornecedor) {
+
+                    this.setIdFornecedor(idFornecedor);
+                    this.setFornecedor(fornecedor);
+                    this.getFornecedor().atualizarValores();
+
+                }
+            }
+        }
+
+    }
+
+    public void setFornecedor(Fornecedor forn) {
+        if (forn != null) {
+            this.fornecedor = forn;
+            this.setIdFornecedor(this.fornecedor.getId());
+        }
+    }
+
+    public boolean deletar() {
+        if (this.idDespesa != 0) {
+            this.despesa.cancelarPagamento();
+        }
+        if (this.idParcela != 0) {
+            this.parcela.cancelarPagamento();
+        }
+
+        return true;
+    }
+
+    public void atualizarDataModificacao() {
         this.dataModificacao = LocalDate.now();
     }
 
@@ -567,13 +540,6 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedor forn) {
-        if (forn != null) {
-            this.fornecedor = forn;
-            this.setIdFornecedor(this.fornecedor.getId());
-        }
-    }
-
     public double getValor() {
         return valor;
     }
@@ -606,15 +572,6 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
         this.dataModificacao = dataModificacao;
     }
 
-    public boolean criar(DAO dao, Usuario user, List<Object> vetor) {
-        if (user != null) {
-            this.idUser = user.getId();
-            this.user = user;
-            return criar(dao, vetor);
-        }
-        return criar(dao, vetor);
-    }
-
     public int getIdPessoa() {
         return idPessoa;
     }
@@ -632,7 +589,7 @@ public class Pagamento implements InterfaceClasse, InterfaceBanco {
     }
 
     public String getNome() {
-        return nome;
+        return descricao.split(" ")[0];
     }
 
     public void setNome(String nome) {

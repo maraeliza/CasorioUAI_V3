@@ -231,7 +231,12 @@ public class Recado implements InterfaceClasse, InterfaceBanco {
     }
 
     public String getNome() {
-        return nome;
+        if(nome == null) {
+            return "ANÔNIMO";
+        }else{
+            return nome;
+        }
+
     }
 
     public void setNome(String nome) {

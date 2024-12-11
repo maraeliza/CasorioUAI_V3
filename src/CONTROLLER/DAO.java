@@ -66,6 +66,7 @@ public class DAO {
                 if (!nomeClasse.equals(NomeClasse.EVENTO)
                         && !nomeClasse.equals(NomeClasse.CONVIDADO_INDIVIDUAL)
                         && !nomeClasse.equals(NomeClasse.PARCELAS)
+                        && !nomeClasse.equals(NomeClasse.PAGAMENTOS)
                 ) {
                     this.syncVetorBanco(nomeClasse);
                 }
@@ -73,6 +74,8 @@ public class DAO {
 
             this.syncVetorBanco(NomeClasse.EVENTO);
             this.syncVetorBanco(NomeClasse.CONVIDADO_INDIVIDUAL);
+            this.syncVetorBanco(NomeClasse.PAGAMENTOS);
+
             this.dataHoje = LocalDate.now();
         } catch (Exception e) {
             System.err.println("Erro no construtor do DAO " + e.getMessage());
@@ -154,9 +157,7 @@ public class DAO {
     }
 
     public ArrayList<String> gerarList(NomeClasse nomeClasse) {
-        int idClasse = nomeClasse.ordinal();
         List<Object> vetor = this.getVectorByClassName(nomeClasse);
-
         ArrayList<String> texto = new ArrayList<>();
         String nomeRelatorio = nomeClasse.toString().toLowerCase().replace("_", " ");
         texto.add("Relatório de " + nomeRelatorio);
@@ -278,7 +279,7 @@ public class DAO {
                         this.todosOsVetores.get(idClasse).clear();
                         for (Object elem : vetorBanco) {
                             this.todosOsVetores.get(idClasse).add(elem);
-                            if(idClasse == 12){
+                            if (idClasse == 12) {
                                 if (((Despesa) elem).isParcelado()) {
                                     ((Despesa) elem).criarParcelas();
                                 }
@@ -328,6 +329,7 @@ public class DAO {
             boolean criado = false;
             Class<?> classe = this.listaClasses.get(idClasse);
             InterfaceClasse objeto = (InterfaceClasse) classe.getDeclaredConstructor().newInstance();
+
             criado = objeto.criar(this, infos);
             if (criado) {
                 this.addVetor(idClasse, objeto);
@@ -337,6 +339,7 @@ public class DAO {
                         this.banco.addItemBanco(objB);
                     }
                 }
+
                 if (idClasse == 12) {
                     System.out.println("----------------------CADASTRANDO PARCELAS DE DESPESA--------------------");
                     if (objeto instanceof Despesa) {
@@ -612,7 +615,8 @@ public class DAO {
                 Despesa despesa = (Despesa) o;
                 if (!despesa.isPago()) {
                     texto.append("\nID: ").append(despesa.getId()).append("\nNome: ").append(despesa.getNome());
-                    texto.append("\n");
+                    texto.append("\nVALOR TOTAL ").append(despesa.getValorTotal());
+                    texto.append("\nNÚMERO DE PARCELAS ").append(despesa.getnParcelas());
                     c++;
                 }
             }
@@ -633,9 +637,21 @@ public class DAO {
             if (o != null) {
                 Despesa despesa = (Despesa) o;
                 if (!despesa.isPago() && despesa.isAgendado()) {
-                    texto.append("\nID: ").append(despesa.getId()).append("           NOME: ").append(despesa.getNome());
-                    texto.append("\nVALOR: ").append(despesa.getValorTotal());
-                    texto.append("\nDATA DO PAGAMENTO AGENDADO: ").append(despesa.getDataAgendamento()).append("\n");
+                    texto.append(despesa.getId()).append("\n\nNOME: ").append(despesa.getNome());
+                    texto.append("\nVALOR TOTAL: ").append(despesa.getValorTotal());
+
+                    if (despesa.isParcelado()) {
+                        texto.append("\nNÚMERO DE PARCELAS: ").append(despesa.getnParcelas()).append("\n");
+                    }
+                    if (despesa.getFornecedor() != null) {
+                        texto.append("\nFORNECEDOR: ").append(despesa.getFornecedor().getNome()).append("\n");
+                    }
+                    String date = despesa.getDataAgendamento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                    texto.append("\nDATA DO PAGAMENTO AGENDADO: ").append(date).append("\n");
+                    if (despesa.getDataPrimeiroVencimento() != null) {
+                        date = despesa.getDataPrimeiroVencimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        texto.append("\nDATA DO PRIMEIRO VENCIMENTO: ").append(date).append("\n");
+                    }
                     c++;
 
                 } else {
@@ -656,9 +672,55 @@ public class DAO {
         }
 
         if (c == 0) {
-            texto = new StringBuilder("\n\nNenhuma despesa encontrada!\n\n");
+            texto = new StringBuilder("\n\nNenhuma despesa com pagamento agendado foi encontrada!\n\n");
         }
         return texto.toString();
+    }
+
+    public ArrayList<String> gerarListDespesasPendentesAgendada() {
+        ArrayList<String> textoList = new ArrayList<>();
+        textoList.add("\n Pagamentos Agendados \n");
+
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.DESPESAS);
+        int c = 0;
+
+        for (Object o : vObj) {
+            if (o != null) {
+                Despesa despesa = (Despesa) o;
+                if (!despesa.isPago() && despesa.isAgendado()) {
+                    textoList.add("\n\nNOME: " + despesa.getNome());
+                    textoList.add("VALOR: " + despesa.getValorTotal());
+                    if (despesa.isParcelado()) {
+                        textoList.add("NÚMERO DE PARCELAS: " + despesa.getnParcelas());
+                    }
+                    if (despesa.getFornecedor() != null) {
+                        textoList.add("FORNECEDOR: " + despesa.getFornecedor().getNome().toUpperCase());
+                    }
+                    String date = despesa.getDataAgendamento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                    textoList.add("DATA DO PAGAMENTO AGENDADO: " + date);
+                    if (despesa.getDataPrimeiroVencimento() != null) {
+                        date = despesa.getDataPrimeiroVencimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        textoList.add("DATA DO PRIMEIRO VENCIMENTO: " + date);
+                    }
+
+                    c++;
+                } else if (!despesa.isPago() && !despesa.isAgendado() && despesa.isParcelado() && !despesa.getvParcelas().isEmpty()) {
+                    for (int p = 0; p < despesa.getnParcelas(); p++) {
+                        Parcela parcela = despesa.getvParcelas().get(p);
+                        if (parcela != null && !parcela.isPago() && parcela.isAgendado()) {
+                            textoList.add(parcela.lerParcelaAgendada());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (c == 0) {
+            textoList.clear(); // Limpa caso nenhuma despesa seja encontrada
+            textoList.add("\n\nNenhuma despesa com pagamento agendado foi encontrada!\n\n");
+        }
+
+        return textoList;
     }
 
     public String getParcelasPendentes(int idDespesa) {
@@ -975,7 +1037,7 @@ public class DAO {
 
         if (conv != null) {
             if (evento != null) {
-                textoList.add("\nConvite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+                textoList.add("Convite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
                 textoList.add("\nCom grande prazer, gostaríamos de convidar você, " + conv.getNome() + ", para compartilhar conosco este momento tão especial em nossas vidas.");
                 textoList.add("É com imensa alegria que contamos com a sua presença para celebrar a união de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome() + ".");
                 textoList.add("\nEvento: " + evento.getNome());
@@ -1011,30 +1073,28 @@ public class DAO {
         textoList.add("Convidados Confirmados");
         for (Object elem : vObj) {
             ConvidadoIndividual conv = (ConvidadoIndividual) elem;
-
-            if (conv.getPessoa().getIdade() <= 8) {
-                pontos = 0.0;
-            } else if (conv.getPessoa().getIdade() >= 9 && conv.getPessoa().getIdade() <= 13) {
-                pontos = 0.5;
-            } else if (conv.getPessoa().getIdade() >= 14) {
-                if (conv.getPessoa().getTipo().equalsIgnoreCase("FORNECEDOR")) {
-                    pontos = 0.5;
-                } else {
-                    pontos = 1.0;
-                }
-
-            }
-
-            qtdPontos = qtdPontos + pontos;
-            pts = Double.toString(pontos);
-
             if (conv != null && conv.isConfirmacao()) {
                 textoList.add("\nNome: " + conv.getNome());
                 textoList.add("Idade: " + conv.getPessoa().getIdade());
                 textoList.add("Tipo: " + conv.getPessoa().getTipo().toLowerCase());
                 textoList.add("Pontos: " + pts);
                 textoList.add(""); // Linha em branco para separar cada convidado
+                if (conv.getPessoa().getIdade() <= 8) {
+                    pontos = 0.0;
+                } else if (conv.getPessoa().getIdade() >= 9 && conv.getPessoa().getIdade() <= 13) {
+                    pontos = 0.5;
+                } else if (conv.getPessoa().getIdade() >= 14) {
+                    if (conv.getPessoa().getTipo().equalsIgnoreCase("FORNECEDOR")) {
+                        pontos = 0.5;
+                    } else {
+                        pontos = 1.0;
+                    }
+                }
+                qtdPontos = qtdPontos + pontos;
+                pts = Double.toString(pontos);
                 c++;
+            } else {
+                pontos = 0;
             }
         }
         if (c == 0) {
@@ -1053,13 +1113,16 @@ public class DAO {
         int totalPgs = 0;
         ArrayList<String> textoList = new ArrayList<>();
 
-        textoList.add("\n Relatório de Pagamentos do Casal");
+        textoList.add("Relatório de Pagamentos do Casal");
 
         for (int i = 0; i < this.todosOsVetores.get(11).size(); i++) {
             Pagamento pg = (Pagamento) this.todosOsVetores.get(11).get(i);
             if (pg != null && pg.getPessoa() != null) {
                 if (pg.getPessoa().getTipo().equalsIgnoreCase("NOIVO") || pg.getPessoa().getTipo().equalsIgnoreCase("NOIVA")) {
-                    textoList.add("Valor pago: " + pg.getValor() + " | Data do pagamento: " + pg.getData());
+                    textoList.add("\nValor pago: R$ " +String.format("%.2f", pg.getValor()) );
+                    textoList.add("Descrição: " + pg.getDescricao());
+                    String date =  pg.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                    textoList.add("Data do pagamento: " + date);
                     textoList.add("Pagante: " + pg.getPessoa().getNome());
                     valorPago += pg.getValor();
                     totalPgs++;
@@ -1074,10 +1137,10 @@ public class DAO {
         }
 
         String totalPgsStr = totalPgs > 1 ? "pagamentos" : "pagamento";
-        textoList.add("\nTotal: " + totalPgs + " " + totalPgsStr);
-        textoList.add("VALOR TOTAL GASTO PELOS NOIVOS R$" + String.format("%.2f", valorPago));
-        textoList.add("GASTOS DA NOIVA:  R$" + String.format("%.2f", valorNoiva));
-        textoList.add("GASTOS DO NOIVO: R$" + String.format("%.2f", valorNoivo));
+        textoList.add("\n\nTOTAL: " + totalPgs + " " + totalPgsStr.toUpperCase());
+        textoList.add("VALOR TOTAL  R$ " + String.format("%.2f", valorPago));
+        textoList.add("PAGAMENTOS FEITOS PELA NOIVA:   R$ " + String.format("%.2f", valorNoiva));
+        textoList.add("PAGAMENTOS FEITOS PELO NOIVO:  R$ " + String.format("%.2f", valorNoivo));
 
         return textoList;
     }
@@ -1089,7 +1152,7 @@ public class DAO {
 
         if (convFamilia != null) {
             if (evento != null) {
-                textoList.add("\nConvite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+                textoList.add("Convite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
                 textoList.add("Com imensa alegria, gostaríamos de convidar a família " + convFamilia.getNome() + " para compartilhar conosco o início de uma nova jornada! É com carinho e emoção que os convidamos para o nosso casamento.");
                 textoList.add("Este é um momento especial e significante em nossas vidas, e ter a sua presença tornará este dia ainda mais memorável e feliz.");
                 textoList.add("Por favor, reserve a data e venha celebrar conosco a união de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome() + ".");

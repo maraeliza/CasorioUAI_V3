@@ -105,7 +105,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
         boolean alterado = false;
     
         if (vetor.get(0) != null) {
-            this.id = (int) vetor.get(0);
+            this.id = (int) vetor.getFirst();
             alterado = true;
         }
         if (vetor.get(1) != null) {
@@ -217,7 +217,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
         if (vetor.get(4) != null && vetor.get(4) instanceof String) {
             String nascimentoStr = (String) vetor.get(4);
             try {
-                if (nascimentoStr.length() > 0) {
+                if (!nascimentoStr.isEmpty()) {
                     this.nascimento = Util.stringToDate(nascimentoStr);
                     this.calcularIdade();
                     alterou = true;
@@ -276,34 +276,27 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
         StringBuilder resultado = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-        // Adiciona informações da pessoa
         resultado.append("\nID ").append(this.id);
         resultado.append("            NOME: ").append(this.nome.toUpperCase());
 
-        // Verifica e formata a data de nascimento
         if (this.nascimento != null) {
             resultado.append("\nData de Nascimento: ").append(this.nascimento.format(formatter));
         }
         if (this.idade != 0) {
             resultado.append("\nIdade: ").append(this.idade);
         }
-        // Verifica e adiciona o telefone
         if (this.telefone != null && !this.telefone.isEmpty()) {
             resultado.append("      Telefone: ").append(this.telefone);
         }
-        // Verifica e adiciona o tipo
         if (this.tipo != null && !this.tipo.isEmpty()) {
             resultado.append("\nTIPO: ").append(this.tipo.toUpperCase());
         }
         resultado.append("\nUsuário Cadastrado: ");
-        // Verifica e adiciona o usuario
         if (this.isUserVinculado()) {
             resultado.append("SIM");
         } else {
             resultado.append("NÃO");
         }
-
-        // Verifica e formata a data de modificação
         if (this.dataModificacao != null) {
             resultado.append("\nData da Última Modificação: ").append(this.dataModificacao.format(formatter));
         }
@@ -315,10 +308,8 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
     public boolean deletar() {
         if (this.userVinculado) {
             Util.mostrarErro(this.getNome() + " não pode ser deletado, tem usuário vinculado!");
-
             return false;
         } else {
-
             return true;
         }
 
@@ -326,12 +317,10 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
 
     public String getNome() {
         return this.nome;
-
     }
 
     public String getTipo() {
         return this.tipo.toUpperCase();
-
     }
 
     public LocalDate getDataCriacao() {
@@ -343,7 +332,6 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
     }
 
     public void atualizarDataModificacao() {
-
         this.dataModificacao = LocalDate.now();
     }
 

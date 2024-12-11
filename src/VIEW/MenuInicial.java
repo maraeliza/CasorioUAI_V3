@@ -90,7 +90,7 @@ public class MenuInicial {
 
             }
 
-        }  else {
+        } else {
             for (int n = 0; n < 2; n++) {
                 if (this.listaNomeClasses[n] != null) {
                     Opcoes += "\n" + Util.intToString(this.nOps) + ". " + this.listaNomeClasses[n];
@@ -110,13 +110,13 @@ public class MenuInicial {
             this.definirTexto(this.dao.getNoivos(0).getNome(), this.dao.getNoivos(1).getNome());
 
             this.op = JOptionPane.showInputDialog(null, this.texto, "UaiCasórioPro", JOptionPane.QUESTION_MESSAGE);
-
-            if (this.op != null) {
-               
-                    o = Util.stringToInt(this.op);
+            if (this.op != null ) {
+                o = Util.stringToInt(this.op);
+                if(o > 0 && o <= this.nOps){
                     this.lidarEscolha(o);
-                
-                
+                }else{
+                    deslogar();
+                }
             } else {
                 deslogar();
             }

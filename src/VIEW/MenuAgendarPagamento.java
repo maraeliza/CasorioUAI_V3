@@ -45,7 +45,7 @@ public class MenuAgendarPagamento {
         this.texto = "\n AGENDAR PAGAMENTO ";
 
         this.texto += "\n DESPESAS";
-        this.texto += "\n" + this.dao.getNomes(12) + "\n\n";
+        this.texto += "\n" + this.dao.getDespesasPendentes()+ "\n\n";
         this.texto += "\n\nINSIRA: \nID DA DESPESA ➡ CONFIRMAR/CANCELAR AGENDAMENTO:" + "\n" + "DIGITE 0                ➡ PARA VOLTAR";
 
         return this.texto;
@@ -78,33 +78,24 @@ public class MenuAgendarPagamento {
 
     public void lidarEscolha(String textoInserido) {
         if (textoInserido.equals("A") || !textoInserido.equals("0")) {
-
-            //pega a despesa
             if (despesa != null) {
-                //checa se a despesa não está paga
                 if (!despesa.isPago()) {
-                    //checa se a pessoa quis editar uma parcela especifica
                     if (!textoInserido.equals("A")) {
 
                         int idParcela = Util.stringToInt(textoInserido);
                         if (idParcela != 0) {
                             this.setIdParcela(idParcela);
                             if (this.getParcela() != null) {
-                                //se estiver agendada
                                 if (this.getParcela().isAgendado()) {
-                                    //cancela agendamento
                                     this.getParcela().cancelarAgendamento();
-                                    this.dao.getBanco().updateItemBanco(this.getParcela());
+                                    
                                     this.verResultado(13);
                                 } else {
-                                    //senão, pede a data de agendamento
                                     LocalDate data = this.getDataAgendamento();
                                     LocalDate hoje = LocalDate.now();
-                                    //checa se a data está no futuro
                                     if (hoje.isBefore(data)) {
-                                        //se sim, realiza o agendamento
                                         this.getParcela().agendar(data);
-                                        this.dao.getBanco().updateItemBanco(this.getParcela());
+                                     
                                         this.dao.mostrarPagamentosAgendados();
                                         this.criarMenuCRUD(this.dao, 11);
                                     }

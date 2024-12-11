@@ -157,7 +157,7 @@ public class MenuRelatorio {
                 this.mostrarConvidadosConfirmados();
                 break;
             case 7:
-                this.dao.mostrarPagamentosAgendados();
+                this.mostrarPagamentosAgendados();
                 break;
             default:
                 break;
@@ -170,6 +170,10 @@ public class MenuRelatorio {
 
     }
 
+    private void mostrarPagamentosAgendados(){
+        this.dao.mostrarPagamentosAgendados();
+        this.gerarPDF("relatorio_pagamentos_agendados", this.dao.gerarListDespesasPendentesAgendada());
+    }
     private void imprimirRecados() {
         Menu_READ menuVer = new Menu_READ();
         menuVer.exibir(this.dao, 0);
@@ -308,30 +312,45 @@ public class MenuRelatorio {
             Font fontTitle = new Font(fonteTitulo, 26, Font.BOLD, corDourada);
 
             String local = System.getProperty("user.dir") + File.separator + "src" + File.separator + "RELATORIOS" + File.separator;
-            Document documento = new Document(PageSize.A4);
+            Document documento = new Document(PageSize.A4, 50, 50, 120, 100);
             PdfWriter writer = PdfWriter.getInstance(documento, new FileOutputStream(local + nomeArquivo + ".pdf"));
 
             BackgroundImage bg = new BackgroundImage("src/ASSETS/bg1.png");
             writer.setPageEvent(bg);
 
             documento.open();
+            if(listaConteudo.size() > 1){
+                Paragraph título = new Paragraph(listaConteudo.getFirst(), fontTitle);
+                título.setAlignment(Element.ALIGN_CENTER);
+                título.setSpacingBefore(70f);
+                título.setSpacingAfter(70f);
+                documento.add(título);
 
-            Paragraph título = new Paragraph(listaConteudo.getFirst(), fontTitle);
-            título.setAlignment(Element.ALIGN_CENTER);
-            título.setSpacingBefore(70f);
-            título.setSpacingAfter(70f);
-            documento.add(título);
+                for (int i = 1; i < listaConteudo.size(); i++) { // Começa do segundo item
+                    String linha = listaConteudo.get(i);
+                    Paragraph conteudo = new Paragraph(linha, fontNormal);
+                    conteudo.setAlignment(Element.ALIGN_LEFT);
+                    conteudo.setSpacingBefore(10f);
+                    conteudo.setIndentationLeft(20f);
+                    conteudo.setIndentationRight(20f);
+                    documento.add(conteudo);
 
-            for (int i = 1; i < listaConteudo.size(); i++) { // Começa do segundo item
-                String linha = listaConteudo.get(i);
+                }
+            }else{
+                String linha = listaConteudo.getFirst();
+
+                Paragraph espaco = new Paragraph("\n\n\n\n", fontNormal);
+                espaco.setSpacingAfter(40f);
+                documento.add(espaco);
+
                 Paragraph conteudo = new Paragraph(linha, fontNormal);
                 conteudo.setAlignment(Element.ALIGN_LEFT);
                 conteudo.setSpacingBefore(10f);
                 conteudo.setIndentationLeft(20f);
                 conteudo.setIndentationRight(20f);
                 documento.add(conteudo);
-
             }
+
 
             LocalDateTime dataAtual = LocalDateTime.now();
             FooterEvent footerEvent = new FooterEvent("Relatorio gerado em: " + dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
@@ -390,7 +409,7 @@ public class MenuRelatorio {
         public void onEndPage(PdfWriter writer, Document document) {
             float xPosition = (document.right() - document.left()) / 2 + document.left();
             ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
-                    new Paragraph(textoFooter), xPosition, document.bottom(), 0);
+                    new Paragraph(textoFooter), xPosition, document.bottom()-90, 0);
         }
     }
 }

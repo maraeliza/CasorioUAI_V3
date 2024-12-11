@@ -104,7 +104,6 @@ public class MenuFazerPagamento {
     public void pagamentoAvulso() {
         System.out.println("Lançando pagamento avulso no sistema");
         Menu_CREATE menu = new Menu_CREATE();
-
         menu.exibir(this.dao, 11, this.user);
     }
 

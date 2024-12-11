@@ -100,10 +100,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             return alterado;
         } else {
             this.dao = dao;
-            System.out.println("\n\n--------------------------DEFININDO ID DA PARCELA ");
             this.id = vetor.get(0) != null ? (int) vetor.get(0) : 0;
-            System.out.println("---------------CRIAR OBJETO DO BANCO------------------\nID NO BANCO"+vetor.get(0));
-            System.out.println("ID definindo é "+this.id+"\n\n ");
             int idDespesa = vetor.get(1) != null ? (int) vetor.get(1) : 0;
             Object objB = this.dao.getBanco().getItemByIDBanco(12, idDespesa);
             if(objB != null){
@@ -143,29 +140,17 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criar(DAO dao, List<Object> vetor) {
-        System.out.println("CRIANDO PARCELA !");
         this.dao = dao;
-        System.out.println(vetor);
         boolean alterado = false;
-
         if (vetor.get(0) != null) {
-
             this.idDespesa = (int) vetor.get(0);
-
             if (this.idDespesa != 0) {
-
                 Despesa despesa = (Despesa) this.dao.getItemByID(12, this.idDespesa);
-                System.out.println("ACESSANDO DESPESA----------------------------------");
-                System.out.println(despesa);
                 if (despesa != null) {
-
                     this.setDespesa(despesa);
-
                     if (vetor.get(1) != null) {
                         this.dataVencimento = (LocalDate) vetor.get(1);
-                        System.out.println("dads !");
                         if (vetor.get(2) != null) {
-
                             double valorFormatado = (double) vetor.get(2);
                             this.valor = valorFormatado;
                             if (vetor.get(3) != null) {
@@ -182,12 +167,9 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
                             alterado = true;
 
-                            System.out.println("\n\n--------------------------DEFININDO ID DA PARCELA ");
                             this.id = this.dao.getTotalClasse(13) + 1;
-                            System.out.println("---------------CRIAR()------------------\nTOTAL NA CLASSE"+this.id);
-                            System.out.println("ID definindo é "+this.id+"\n\n ");
                             this.dataCriacao = LocalDate.now();
-                            this.dataModificacao = null; // Nenhuma modificação inicial
+                            this.dataModificacao = null;
                             this.pago = false;
                             this.agendado = false;
                             this.status = this.isVencida() ? "VENCIDA" : "PENDENTE";
@@ -229,7 +211,6 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         if (this.nome != null && !this.nome.isEmpty()) {
             resultado.append("         DESPESA: ").append(this.nome).append("\n");
         }
-
         resultado.append("Valor: R$").append(String.format("%.2f", this.valor)).append("\n");
 
         if (this.dataVencimento != null) {
@@ -308,8 +289,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             this.atualizarDataModificacao();
             this.dao.getBanco().updateItemBanco(this);
             if (this.despesa != null) {
-                //cadastrar pagamento da parcela
-                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.despesa.getIdFornecedor(), hoje, this.despesa.getDescricao(), this.getValor(), this.getN(), this.getIdDespesa(), this.getId()));
+                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.despesa.getIdFornecedor(), this.despesa.getDescricao(), this.getValor(), this.getN(), this.getIdDespesa(), this.getId(), hoje));
                 try {
                     this.dao.cadastrar(11, infos);
                 } catch (Exception e) {
@@ -331,7 +311,15 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             this.atualizarDataModificacao();
             this.dao.getBanco().updateItemBanco(this);
             if (this.despesa != null) {
-                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.despesa.getIdFornecedor(), hoje, this.despesa.getDescricao(), this.getValor(), this.getN(), this.getIdDespesa(), this.getId()));
+                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(
+                    this.despesa.getIdFornecedor(), //0
+                    this.despesa.getDescricao(),  //1
+                    this.getValor(),//2
+                    this.getN(), //3  1 de 5 por ex
+                    this.getIdDespesa(), //4
+                    this.getId(), //5 id da parcela
+                    hoje //6
+                    ));
                 try {
                     this.dao.cadastrar(11, infos);
                     if (!quitandoDespesa) {
@@ -358,10 +346,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
     //@Override
     public void update(List<Object> vetor) {
-
         boolean alterou = false;
-
-        // Atualiza a data de modificação caso tenha havido alguma alteração
         if (alterou) {
             this.atualizarDataModificacao();
         }

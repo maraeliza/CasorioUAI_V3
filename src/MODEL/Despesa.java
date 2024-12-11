@@ -103,7 +103,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
         return "TB_DESPESA";
     }
 
-    @Override    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
 
         this.getvParcelas().clear();
         boolean alterado = vetor.get(0) != null;
@@ -218,11 +219,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             try {
                 Parcela objeto = new Parcela();
                 boolean criado = objeto.criar(this.dao, infos);
-                System.out.println("PARCELA CRIADA? "+criado);
                 if (criado) {
-                    System.out.println("ADD EM VPARCELAS " + this.vParcelas.size());
                     this.vParcelas.add(objeto);
-                    System.out.println("ADICIONADO!!" + this.vParcelas.size());
                     this.dao.addVetor(13, objeto);
 
                 }
@@ -390,6 +388,9 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             Util.mostrarMSG("Agendamento feito com sucesso!");
         }
         this.atualizarDataModificacao();
+        System.out.println("AGENDOU? "+this.isAgendado());
+        System.out.println(this.getDataModificacao());
+        System.out.println("-----------------ATUALIZANDO NO BANCO----------------------");
         this.dao.getBanco().updateItemBanco(this);
         return true;
 
@@ -411,7 +412,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
                 Menu_READ menuVer = new Menu_READ();
                 menuVer.exibir(this.dao, 11);
             } else {
-                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.getIdFornecedor(), hoje, this.getDescricao(), this.getValorTotal(), 1, this.getId(), 1));
+                ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.getIdFornecedor(),  this.getDescricao(), this.getValorTotal(), 1, this.getId(), 1,hoje));
                 try {
                     this.dao.cadastrar(11, infos);
                     Menu_READ menuVer = new Menu_READ();

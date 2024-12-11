@@ -228,11 +228,10 @@ public class Fornecedor implements InterfaceClasse, InterfaceBanco {
 
             }
         }
-        //calcula a diferença e define o valor a pagar
         this.valorAPagar = this.valorTotal - this.valorPago;
         this.setQuitado(this.valorAPagar == 0 && this.valorTotal > 0);
         try {
-            this.dao.getBanco().updateItemBanco((InterfaceBanco) this);
+            this.dao.getBanco().updateItemBanco(this);
         } catch (Exception e) {
         }
     }

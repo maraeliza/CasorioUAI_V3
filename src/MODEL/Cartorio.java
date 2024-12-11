@@ -26,7 +26,6 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
     @Override
     public List<String> getCamposSQL() {
         List<String> campos = new ArrayList<>();
-        campos.clear();
         campos.add("id");
         campos.add("nome");
         campos.add("telefone");
@@ -40,7 +39,6 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
     @Override
     public List<Object> getValoresSQL() {
         List<Object> campos = new ArrayList<>();
-        campos.clear();
         campos.add(this.id);
         campos.add(this.nome);
         campos.add(this.telefone);
@@ -64,7 +62,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         boolean alterado = false;
 
         if (vetor.get(0) != null) {
-            this.id = (int) vetor.get(0);
+            this.id = (int) vetor.getFirst();
             alterado = true;
         }
         if (vetor.get(1) != null) {
@@ -100,7 +98,7 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         boolean alterado = false;
 
         if (vetor.get(0) != null) {
-            this.nome = (String) vetor.get(0);
+            this.nome = (String) vetor.getFirst();
             alterado = true;
         }
 
@@ -164,12 +162,10 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         campos[3] = "Endereço: ";
         return campos;
     }
-    // Método para atualizar a data de modificação
     public void atualizarDataModificacao() {
         this.dataModificacao = LocalDate.now();
     }
 
-    // Método para deletar cartório
     public boolean deletar() {
         if (this.isEventoVinculado()) {
             Util.mostrarErro("Não é possível excluir o cartório " + this.getNome() + ", pois ele está vinculado a um evento");
@@ -182,26 +178,21 @@ public class Cartorio implements InterfaceClasse, InterfaceBanco {
         StringBuilder resultado = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-        // Adiciona informações do cartório
         resultado.append("Cartório ").append(this.id);
         resultado.append("\nNome: ").append(this.nome);
 
-        // Verifica e adiciona o telefone
         if (this.telefone != null && !this.telefone.isEmpty()) {
             resultado.append("\nTelefone: ").append(this.telefone);
         }
 
-        // Verifica e adiciona o endereço
         if (this.endereco != null && !this.endereco.isEmpty()) {
             resultado.append("\nEndereço: ").append(this.endereco);
         }
 
-        // Verifica e formata a data de criação
         if (this.dataCriacao != null) {
             resultado.append("\nData de Criação: ").append(this.dataCriacao.format(formatter));
         }
 
-        // Verifica e formata a data de modificação
         if (this.dataModificacao != null) {
             resultado.append("\nData da Última Modificação: ").append(this.dataModificacao.format(formatter));
         }

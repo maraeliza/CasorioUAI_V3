@@ -29,7 +29,8 @@ public class Menu_CREATE {
     private Class classe;
 
     public void exibir(DAO dao, int idClasse, Usuario user) {
-       
+        System.out.println("\n\n-------------------------CRIANDO ITENS------------------------------");
+        System.out.println(user);
         this.dao = dao;
         this.vetor = new String[10];
         this.nomeClasse = this.dao.getNameClasseById(idClasse);
