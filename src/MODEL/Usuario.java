@@ -258,6 +258,7 @@ public class Usuario implements InterfaceClasse, InterfaceBanco {
 
     public boolean deletar() {
         this.pessoa.setUserVinculado(false);
+        this.dao.getBanco().updateItemBanco(this.pessoa);
         return true;
     }
 
@@ -284,11 +285,9 @@ public class Usuario implements InterfaceClasse, InterfaceBanco {
         this.pessoa.setUserVinculado(false);
         this.pessoa.setCerimonialVinculado(false);
 
-        try {
-            this.dao.delItemByID(3, this.getId());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        this.dao.delItemByID(3, this.getId());
+
+
     }
 
     public int getIdPessoa() {

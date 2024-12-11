@@ -18,6 +18,7 @@ public class TrabalhoPOO {
 
 
 
-//JoséMaria15122024iyai
+//JoséMaria15122024onhv 
+//JoséMaria15122024gzju  
 
     

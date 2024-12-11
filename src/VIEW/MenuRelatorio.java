@@ -297,6 +297,7 @@ public class MenuRelatorio {
             // Exibe os nomes dos convidados confirmados
             String mensagem = "Lista de Convidados Confirmados:\n" + NomeConvidadosConfirmados + "\n\nClique em OK para voltar.";
             JOptionPane.showMessageDialog(null, mensagem, "Convidados Confirmados", JOptionPane.INFORMATION_MESSAGE);
+            this.gerarPDF("relatorio_convidados_confirmados", this.dao.getNomesConfirmados());
         }
     }
 

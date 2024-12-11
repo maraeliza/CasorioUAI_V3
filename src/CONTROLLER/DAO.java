@@ -63,12 +63,13 @@ public class DAO {
                 this.todosOsVetores.add(new ArrayList<>());
             }
             for (NomeClasse nomeClasse : NomeClasse.values()) {
-                if (!nomeClasse.equals(NomeClasse.EVENTO)) {
+                if (!nomeClasse.equals(NomeClasse.EVENTO) && !nomeClasse.equals(NomeClasse.CONVIDADO_INDIVIDUAL)) {
                     this.syncVetorBanco(nomeClasse);
                 }
             }
 
             this.syncVetorBanco(NomeClasse.EVENTO);
+            this.syncVetorBanco(NomeClasse.CONVIDADO_INDIVIDUAL);
             this.dataHoje = LocalDate.now();
         } catch (Exception e) {
             System.err.println("Erro no construtor do DAO " + e.getMessage());
@@ -148,13 +149,14 @@ public class DAO {
         texto.append(this.addTotal(c));
         return texto.toString();
     }
+
     public ArrayList<String> gerarList(NomeClasse nomeClasse) {
         int idClasse = nomeClasse.ordinal();
         List<Object> vetor = this.getVectorByClassName(nomeClasse);
 
         ArrayList<String> texto = new ArrayList<>();
         String nomeRelatorio = nomeClasse.toString().toLowerCase().replace("_", " ");
-        texto.add("Relatório de "+nomeRelatorio);
+        texto.add("Relatório de " + nomeRelatorio);
         texto.add(nomeRelatorio.toUpperCase());
         int c = 0;
         for (Object item : vetor) {
@@ -336,7 +338,7 @@ public class DAO {
                                 if (!this.banco.findByItem(p)) {
                                     this.banco.addItemBanco(p);
                                     this.addVetor(13, p);
-                                    String sql = "insert into tb_despesa_parcela (id_parcela, id_despesa) values("+p.getId()+","+despesa.getId()+" )";
+                                    String sql = "insert into tb_despesa_parcela (id_parcela, id_despesa) values(" + p.getId() + "," + despesa.getId() + " )";
                                     System.out.println("INSERINDO RELACIONAMENTO ENTRE TABELA DESPESA E PARCELA");
                                     this.getBanco().executeSQL(sql);
                                 }
@@ -437,7 +439,7 @@ public class DAO {
         return null;
     }
 
-    public boolean delItemByID(int idClasse, int id) throws SQLException {
+    public boolean delItemByID(int idClasse, int id) {
         for (Object elem : this.getVectorByClassName(NomeClasse.values()[idClasse])) {
             if (elem instanceof InterfaceClasse item) {
                 if (item.getId() == id) {
@@ -448,15 +450,22 @@ public class DAO {
                         if (elem instanceof InterfaceBanco objB) {
                             if (this.banco.findByItem(objB)) {
                                 String nomeTabela = this.getNomeTabelaByID(idClasse);
-                                this.banco.delItemBancoByID(nomeTabela, id);
+                                try {
+                                    this.banco.delItemBancoByID(nomeTabela, id);
 
-                                if (idClasse == 12) {
-                                    for (Parcela p : ((Despesa) objB).getvParcelas()) {
-                                        int posParcela = this.getVectorByClassName(NomeClasse.PARCELAS).indexOf(p);
-                                        this.removeFromList(13, posParcela);
-                                        this.banco.delItemBancoByID("tb_parcela", p.getId());
+                                    if (idClasse == 12) {
+                                        for (Parcela p : ((Despesa) objB).getvParcelas()) {
+                                            int posParcela = this.getVectorByClassName(NomeClasse.PARCELAS).indexOf(p);
+                                            this.removeFromList(13, posParcela);
+                                            this.banco.delItemBancoByID("tb_parcela", p.getId());
+                                        }
                                     }
+                                } catch (SQLException e) {
+                                    System.out.println("DAO.java delItemByID (erro ao deletar do banco de dados) \n" + e.getMessage());
+                                } catch (Exception e) {
+                                    System.out.println("DAO.java delItemByID \n" + e.getMessage());
                                 }
+
 
                             } else {
                                 System.out.println("Objeto não está cadastrado no banco!");
@@ -822,9 +831,11 @@ public class DAO {
                     if (conv != null) {
                         if (resposta.equalsIgnoreCase("SIM")) {
                             conv.setConfirmacao(true);
+                            this.getBanco().updateItemBanco(conv);
                             Util.mostrarMSG("PRESENÇA CONFIRMADA!");
                         } else {
                             conv.setConfirmacao(false);
+                            this.getBanco().updateItemBanco(conv);
                             Util.mostrarMSG("Obrigado pela resposta ❤! \nAté mais!");
                         }
 
@@ -942,11 +953,12 @@ public class DAO {
         return texto;
 
     }
+
     public ArrayList<String> gerarListConviteIndividual(int idConvidado, int idEvento) {
         Evento evento = (Evento) this.getItemByID(5, idEvento);
         ConvidadoIndividual conv = (ConvidadoIndividual) this.getItemByID(9, idConvidado);
         ArrayList<String> textoList = new ArrayList<>();
-    
+
         if (conv != null) {
             if (evento != null) {
                 textoList.add("\nConvite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
@@ -970,7 +982,53 @@ public class DAO {
         } else {
             textoList.add("Nenhum convidado com id " + idConvidado + " foi encontrado!");
         }
-    
+
+        return textoList;
+    }
+
+    public ArrayList<String> getNomesConfirmados() {
+        ArrayList<String> textoList = new ArrayList<>();
+
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.CONVIDADO_INDIVIDUAL);
+        int c = 0;
+        double pontos = 0.0;
+        double qtdPontos = 0.0;
+        String pts = " ";
+        textoList.add("Convidados Confirmados");
+        for (Object elem : vObj) {
+            ConvidadoIndividual conv = (ConvidadoIndividual) elem;
+
+            if (conv.getPessoa().getIdade() <= 8) {
+                pontos = 0.0;
+            } else if (conv.getPessoa().getIdade() >= 9 && conv.getPessoa().getIdade() <= 13) {
+                pontos = 0.5;
+            } else if (conv.getPessoa().getIdade() >= 14) {
+                if (conv.getPessoa().getTipo().equalsIgnoreCase("FORNECEDOR")) {
+                    pontos = 0.5;
+                } else {
+                    pontos = 1.0;
+                }
+
+            }
+
+            qtdPontos = qtdPontos + pontos;
+            pts = Double.toString(pontos);
+
+            if (conv != null && conv.isConfirmacao()) {
+                textoList.add("\nNome: " + conv.getNome());
+                textoList.add("Idade: " + conv.getPessoa().getIdade());
+                textoList.add("Tipo: " + conv.getPessoa().getTipo().toLowerCase());
+                textoList.add("Pontos: " + pts);
+                textoList.add(""); // Linha em branco para separar cada convidado
+                c++;
+            }
+        }
+        if (c == 0) {
+            textoList.add("\nNenhum Convidado Confirmado!\n");
+        }
+        String qtdPts = Double.toString(qtdPontos);
+        textoList.add("Total de pontos: " + qtdPts);
+
         return textoList;
     }
 
@@ -980,9 +1038,9 @@ public class DAO {
         double valorNoivo = 0.0;
         int totalPgs = 0;
         ArrayList<String> textoList = new ArrayList<>();
-    
+
         textoList.add("\n Relatório de Pagamentos do Casal");
-    
+
         for (int i = 0; i < this.todosOsVetores.get(11).size(); i++) {
             Pagamento pg = (Pagamento) this.todosOsVetores.get(11).get(i);
             if (pg != null && pg.getPessoa() != null) {
@@ -1000,16 +1058,16 @@ public class DAO {
                 }
             }
         }
-    
+
         String totalPgsStr = totalPgs > 1 ? "pagamentos" : "pagamento";
         textoList.add("\nTotal: " + totalPgs + " " + totalPgsStr);
         textoList.add("VALOR TOTAL GASTO PELOS NOIVOS R$" + String.format("%.2f", valorPago));
         textoList.add("GASTOS DA NOIVA:  R$" + String.format("%.2f", valorNoiva));
         textoList.add("GASTOS DO NOIVO: R$" + String.format("%.2f", valorNoivo));
-    
+
         return textoList;
     }
-    
+
     public ArrayList<String> gerarListConviteFamilia(int idEvento, int idConvidadoFamilia) {
         Evento evento = (Evento) this.getItemByID(5, idEvento);
         ConvidadoFamilia convFamilia = (ConvidadoFamilia) this.getItemByID(10, idConvidadoFamilia); // Classe ConvidadoFamilia
@@ -1024,7 +1082,7 @@ public class DAO {
 
                 textoList.add("\nEvento: " + evento.getNome());
                 textoList.add("Data: " + evento.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                if(evento.getEndereco() != null) {
+                if (evento.getEndereco() != null) {
                     textoList.add("Local: " + evento.getEndereco());
                 }
                 textoList.add("\nPor favor, confirme a presença de sua família");
@@ -1055,8 +1113,8 @@ public class DAO {
                 texto += "Evento: " + evento.getNome() + " \n";
                 texto += "Data: " + evento.getData() + " \n";
 
-                if(evento.getEndereco() != null) {
-                    texto+="Local: " + evento.getEndereco();
+                if (evento.getEndereco() != null) {
+                    texto += "Local: " + evento.getEndereco();
                 }
 
                 texto += "\nPor favor, confirme a presença de sua família\n";

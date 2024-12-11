@@ -112,7 +112,7 @@ public class Menu_CREATE {
     }
 
     public String montarOpcoes(String nomeClasse, int i) {
-        nomeClasse = nomeClasse.toUpperCase();
+        nomeClasse = nomeClasse.toUpperCase().replace("_", " ");
         String conteudo = "";
         switch (nomeClasse) {
             case "USUÁRIOS" -> {

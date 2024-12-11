@@ -87,7 +87,6 @@ public class Cerimonial implements InterfaceClasse, InterfaceBanco {
                 if (this.dao.getBanco().findByItem((InterfaceBanco) objUsuario)) {
                     this.user = (Usuario) objUsuario;
                     this.idUsuario = idUsuario;
-                    // Relacionamento com TB_PESSOA
                     Object objPessoa = this.dao.getItemByID(2, idPessoa);
                     if (objPessoa instanceof Pessoa) {
                         if (this.dao.getBanco().findByItem((InterfaceBanco) objPessoa)) {
@@ -102,16 +101,19 @@ public class Cerimonial implements InterfaceClasse, InterfaceBanco {
                     System.err.println("Usuario de id "+idUsuario+" nao encontrado no banco.");
                     return false;
                 }
+                this.nome = (String) vetor.get(3);
+                this.dataCriacao = (LocalDate) vetor.get(4);
+                this.dataModificacao = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
+                this.eventoVinculado = (Boolean) vetor.get(6);
+
+                return true;
+            }else{
+                return false;
             }
 
 
 
-            this.nome = (String) vetor.get(3);
-            this.dataCriacao = (LocalDate) vetor.get(4);
-            this.dataModificacao = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
-            this.eventoVinculado = (Boolean) vetor.get(6);
 
-            return true;
         }
     }
 

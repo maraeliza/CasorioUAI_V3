@@ -26,7 +26,8 @@ public class Menu_CRUD {
     private int idClasse;
     private int nOps;
 
-    private void definirTexto(String classNome) {
+    private void definirTexto(String nomeClass) {
+        String classNome = nomeClass.replace("_", " ");
         this.texto = "\n\nMENU DE " + classNome;
         this.texto += "\n\nEscolha a opção a seguir ";
 

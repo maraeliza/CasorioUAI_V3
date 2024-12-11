@@ -6,6 +6,7 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.Util;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,10 +14,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author CAUPT - ALUNOS
  */
-public class ConvidadoIndividual implements InterfaceClasse {
+public class ConvidadoIndividual implements InterfaceClasse, InterfaceBanco {
 
     private int id;
     private int idPessoa;
@@ -43,6 +43,96 @@ public class ConvidadoIndividual implements InterfaceClasse {
         campos[2] = "ID da Familia: ";
         campos[3] = "Parentesco: ";
         return campos;
+    }
+
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("idPessoa");
+        campos.add("idFamilia");
+        campos.add("idUser");
+        campos.add("parentesco");
+        campos.add("confirmacao");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.idPessoa);
+        valores.add(this.idFamilia);
+        valores.add(this.idUser);
+        valores.add(this.parentesco);
+        valores.add(this.confirmacao);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        return valores;
+    }
+
+    @Override
+    public String getNomeTabela() {
+        return "TB_CONVIDADO_INDIVIDUAL";
+    }
+
+    public static String getNomeTabelaByClass() {
+        return "TB_CONVIDADO_INDIVIDUAL";
+    }
+
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null;
+        if (!alterado) {
+            return alterado;
+        } else {
+            this.dao = dao;
+            this.id = (int) vetor.get(0);
+            int idPessoa = vetor.get(1) != null ? (int) vetor.get(1) : 0;
+            if (idPessoa > 0) {
+                Object objB = this.dao.getItemByID(2, idPessoa);
+                if (objB != null) {
+                    if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
+                        this.pessoa = (Pessoa) objB;
+                        this.pessoa.setConvidadoVinculado(true);
+                        this.dao.getBanco().updateItemBanco(this.pessoa);
+                        this.idPessoa = idPessoa;
+
+                        this.idFamilia = vetor.get(2) != null ? (int) vetor.get(2) : 0;
+                        if (this.idFamilia > 0) {
+                            Object objFamilia = this.dao.getItemByID(10, this.idFamilia);
+                            if (objFamilia != null) {
+                                this.familia = (ConvidadoFamilia) objFamilia;
+                            }
+                        }
+
+                        this.idUser = vetor.get(3) != null ? (int) vetor.get(3) : 0;
+                        if (this.idUser > 0) {
+                            Object objUser = this.dao.getItemByID(3, this.idUser);
+                            if (objUser != null) {
+                                this.user = (Usuario) objUser;
+                                this.idUser = (int) vetor.get(3);
+                            }
+                        }
+
+
+                        this.parentesco = vetor.get(4) != null ? (String) vetor.get(4) : "";
+                        this.confirmacao = vetor.get(5) != null && (boolean) vetor.get(5);
+                        this.dataCriacao = vetor.get(6) != null ? (LocalDate) vetor.get(6) : null;
+                        this.dataModificacao = vetor.get(7) != null ? (LocalDate) vetor.get(7) : null;
+
+                        return alterado;
+                    } else {
+                        System.out.println("Objeto nao encontrado no banco");
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public void setPessoa(Pessoa pessoa) {
@@ -90,7 +180,8 @@ public class ConvidadoIndividual implements InterfaceClasse {
             }
 
             this.setPessoa(p);
-
+            this.pessoa.setConvidadoVinculado(true);
+            this.dao.getBanco().updateItemBanco(this.pessoa);
             return true;
         }
         return false;
@@ -98,17 +189,14 @@ public class ConvidadoIndividual implements InterfaceClasse {
 
     public boolean criar(DAO dao, List<Object> vetor) {
         this.dao = dao;
+
         boolean alterado = false;
-
         if (this.dao != null) {
-
             int idPessoaC = Util.stringToInt((String) vetor.get(0));
-
             Pessoa p = (Pessoa) this.dao.getItemByID(2, idPessoaC);
-
             if (p != null) {
 
-                if (!p.isConvidadoVinculado() && p.getTipo().toUpperCase().equals("CONVIDADO")) {
+                if (!p.isConvidadoVinculado() && p.getTipo().equalsIgnoreCase("CONVIDADO")) {
 
                     if (!p.isUserVinculado()) {
                         this.trocarPessoa(idPessoaC, p);
@@ -118,30 +206,30 @@ public class ConvidadoIndividual implements InterfaceClasse {
                         if (familia != null) {
                             this.trocarFamilia(idFamilia, familia);
 
-                            /* Código para criar acesso (usuario ) do convidado */
                             ArrayList<Object> userDados = new ArrayList<>(Arrays.asList((String) vetor.get(0), p.getNome().toUpperCase(), familia.getAcesso()));
                             try {
                                 this.dao.cadastrar(3, userDados);
                                 Usuario user = this.dao.getUserByIdPessoa(p.getId());
+                                if (user != null) {
+                                    this.setUser(user);
+                                    String parentesco = (String) vetor.get(2);
+                                    if (this.getPessoa() != null
+                                            && this.getFamilia() != null
+                                            && this.getUser() != null
+                                            && !parentesco.isEmpty()) {
+                                        this.setParentesco(parentesco);
+                                        alterado = true;
+                                    }
+
+                                    if (alterado) {
+                                        this.dataCriacao = LocalDate.now();
+                                        this.dataModificacao = null;
+                                        this.id = this.dao.getTotalClasse(9) + 1;
+                                    }
+                                }
+
                             } catch (Exception e) {
-
-                            }
-                            if (user != null) {
-                                this.setUser(user);
-                                String parentesco = (String) vetor.get(2);
-                                if (this.getPessoa() != null
-                                        && this.getFamilia() != null
-                                        && this.getUser() != null
-                                        && parentesco.length() > 0) {
-                                    this.setParentesco(parentesco);
-                                    alterado = true;
-                                }
-
-                                if (alterado) {
-                                    this.dataCriacao = LocalDate.now();
-                                    this.dataModificacao = null;
-                                    this.id = this.dao.getTotalClasse(9) +1; // Incrementa o contador de IDs
-                                }
+                                System.err.println(e.getMessage());
                             }
 
                         }
@@ -170,7 +258,46 @@ public class ConvidadoIndividual implements InterfaceClasse {
     public void update(List<Object> vetor) {
         boolean alterou = false;
 
-        // Atualiza a data de modificação caso tenha havido alguma alteração
+        // Atualiza o ID da pessoa e troca se necessário
+        if (vetor.get(1) != null && vetor.get(1) instanceof String idPessoaStr) {
+            if (!idPessoaStr.isEmpty()) {
+                int idPessoa = Util.stringToInt(idPessoaStr);
+                if (idPessoa != 0 && this.getIdPessoa() != idPessoa) {
+                    Pessoa pessoa = (Pessoa) this.dao.getItemByID(2, idPessoa);
+                    this.trocarPessoa(idPessoa, pessoa);
+                    alterou = true;
+                }
+            }
+        }
+
+        // Atualiza o ID da família e troca se necessário
+        if (vetor.get(2) != null && vetor.get(2) instanceof String idFamiliaStr) {
+            if (!idFamiliaStr.isEmpty()) {
+                int idFamilia = Util.stringToInt(idFamiliaStr);
+                if (idFamilia != 0 && this.getIdFamilia() != idFamilia) {
+                    ConvidadoFamilia familia = (ConvidadoFamilia) this.dao.getItemByID(10, idFamilia);
+                    this.trocarFamilia(idFamilia, familia);
+                    this.dao.delItemByID(3,this.getIdUser());
+                    ArrayList<Object> userDados = new ArrayList<>(Arrays.asList((String) vetor.get(1), this.pessoa.getNome().toUpperCase(), familia.getAcesso()));
+                    this.dao.cadastrar(3, userDados);
+                    Usuario user = this.dao.getUserByIdPessoa(this.pessoa.getId());
+                    if (user != null) {
+                        this.setUser(user);
+                    }
+                    alterou = true;
+                }
+            }
+        }
+
+        // Atualiza o parentesco
+        if (vetor.get(3) != null && vetor.get(3) instanceof String parentesco) {
+            if (!parentesco.isEmpty()) {
+                this.parentesco = parentesco;
+                alterou = true;
+            }
+        }
+
+        // Atualiza a data de modificação, se necessário
         if (alterou) {
             this.atualizarDataModificacao();
         }
@@ -187,7 +314,7 @@ public class ConvidadoIndividual implements InterfaceClasse {
         if (this.familia != null) {
             resultado.append("\n Nome da Família: ").append(this.familia.getNome());
         }
-        if (this.parentesco != null && this.parentesco.length() > 0) {
+        if (this.parentesco != null && !this.parentesco.isEmpty()) {
             // Informações adicionais
             resultado.append("\n Parentesco: ").append(this.parentesco);
         }
@@ -321,7 +448,8 @@ public class ConvidadoIndividual implements InterfaceClasse {
 
     public boolean deletar() {
         /*lembrar de deletar usuário tbm*/
-
+        this.pessoa.setConvidadoVinculado(false);
+        this.dao.getBanco().updateItemBanco(this.pessoa);
         return true;
     }
 
