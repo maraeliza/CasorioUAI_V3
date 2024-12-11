@@ -6,6 +6,7 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.*;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         this.pago = false;
         this.agendado = false;
     }
+
     @Override
     public List<String> getCamposSQL() {
         List<String> campos = new ArrayList<>();
@@ -53,8 +55,11 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         campos.add("pago");
         campos.add("agendado");
         campos.add("status");
+        campos.add("n");
+        campos.add("nTotal");
         campos.add("dataCriacao");
         campos.add("dataModificacao");
+
         return campos;
     }
 
@@ -71,6 +76,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         valores.add(this.pago);
         valores.add(this.agendado);
         valores.add(this.status);
+        valores.add(this.n);
+        valores.add(this.nTotal);
         valores.add(this.dataCriacao);
         valores.add(this.dataModificacao);
         return valores;
@@ -80,33 +87,47 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
     public String getNomeTabela() {
         return "TB_PARCELA";
     }
+
     public static String getNomeTabelaByClass() {
         return "TB_PARCELA";
     }
+
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null;
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null;
+
         if (!alterado) {
             return alterado;
         } else {
             this.dao = dao;
-            this.id = (int) vetor.get(0);
-            this.idDespesa = (int) vetor.get(1);
-            this.nome = (String) vetor.get(2);
-            this.valor = (double) vetor.get(3);
-            this.dataVencimento = (LocalDate) vetor.get(4);
+            this.id = vetor.get(0) != null ? (int) vetor.get(0) : 0;
+            int idDespesa = vetor.get(1) != null ? (int) vetor.get(1) : 0;
+            Object objB = this.dao.getBanco().getItemByIDBanco(12, idDespesa);
+            if(objB != null){
+                this.idDespesa = idDespesa;
+                this.despesa = (Despesa) objB;
+
+            }
+            this.nome = vetor.get(2) != null ? (String) vetor.get(2) : "";
+            this.valor = vetor.get(3) != null ? (double) vetor.get(3) : 0.0;
+
+            this.dataVencimento = vetor.get(4) != null ? (LocalDate) vetor.get(4) : null;
             this.dataPagamento = vetor.get(5) != null ? (LocalDate) vetor.get(5) : null;
             this.dataAgendamento = vetor.get(6) != null ? (LocalDate) vetor.get(6) : null;
-            this.pago = (boolean) vetor.get(7);
-            this.agendado = (boolean) vetor.get(8);
-            this.status = (String) vetor.get(9);
-            this.dataCriacao = (LocalDate) vetor.get(10);
-            this.dataModificacao = vetor.get(11) != null ? (LocalDate) vetor.get(11) : null;
+
+            this.pago = vetor.get(7) != null && (boolean) vetor.get(7);
+            this.agendado = vetor.get(8) != null && (boolean) vetor.get(8);
+
+            this.status = vetor.get(9) != null ? (String) vetor.get(9) : "";
+            this.n = vetor.get(10) != null ? (int) vetor.get(10) : 0;
+            this.nTotal = vetor.get(11) != null ? (int) vetor.get(11) : 0;
+
+            this.dataCriacao = vetor.get(12) != null ? (LocalDate) vetor.get(12) : null;
+            this.dataModificacao = vetor.get(13) != null ? (LocalDate) vetor.get(13) : null;
+
             return alterado;
         }
     }
-
-
 
     public static String[] getCampos() {
         String[] campos = new String[10];
@@ -116,7 +137,6 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         campos[3] = "VALOR: ";
         return campos;
     }
-
 
     @Override
     public boolean criar(DAO dao, List<Object> vetor) {
@@ -145,6 +165,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
                             this.valor = valorFormatado;
                             if (vetor.get(3) != null) {
                                 this.n = (int) vetor.get(3);
+                            } else {
+                                this.n = 0;
                             }
                             if (vetor.get(4) != null) {
                                 this.setNTotal((int) vetor.get(4));
@@ -152,10 +174,11 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
                             if (vetor.get(5) != null) {
                                 this.setNome((String) vetor.get(5));
                             }
+
                             alterado = true;
 
                             // Atribui o ID único e define as datas de criação e modificação
-                            this.id = ++Parcela.total;
+                            this.id = this.dao.getTotalClasse(13) + 1;
                             this.dataCriacao = LocalDate.now();
                             this.dataModificacao = null; // Nenhuma modificação inicial
                             this.pago = false;
@@ -241,6 +264,10 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
                 this.setAgendado(true);
                 this.setDataAgendamento(dataAgendamento);
             }
+
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
+
             return true;
         }
 
@@ -249,6 +276,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
     public void cancelarAgendamento() {
         this.setAgendado(false);
         this.setDataAgendamento(null);
+        this.atualizarDataModificacao();
+        this.dao.getBanco().updateItemBanco(this);
     }
 
     public void agendarForce(LocalDate dataAgendamento) {
@@ -256,6 +285,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         if (hoje.isBefore(dataAgendamento)) {
             this.setAgendado(true);
             this.setDataAgendamento(dataAgendamento);
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
         }
     }
 
@@ -267,7 +298,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             this.setDataPagamento(hoje);
             this.setStatus("PAGA");
             this.setAgendado(false);
-
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
             if (this.despesa != null) {
                 //cadastrar pagamento da parcela
                 ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.despesa.getIdFornecedor(), hoje, this.despesa.getDescricao(), this.getValor(), this.getN(), this.getIdDespesa(), this.getId()));
@@ -289,7 +321,8 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             this.setDataPagamento(hoje);
             this.setStatus("PAGA");
             this.setAgendado(false);
-
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
             if (this.despesa != null) {
                 ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.despesa.getIdFornecedor(), hoje, this.despesa.getDescricao(), this.getValor(), this.getN(), this.getIdDespesa(), this.getId()));
                 try {
@@ -311,11 +344,12 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
             this.setPago(false); // Marca a parcela como não paga
             this.setDataPagamento(null); // Remove a data de pagamento
             this.status = this.isVencida() ? "VENCIDA" : "PENDENTE"; // Atualiza o status
-
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
         }
     }
 
-    @Override
+    //@Override
     public void update(List<Object> vetor) {
 
         boolean alterou = false;
@@ -471,7 +505,6 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
     public void setnTotal(int nTotal) {
         this.nTotal = nTotal;
     }
-
 
     public int getNTotal() {
         return this.nTotal;

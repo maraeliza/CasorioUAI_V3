@@ -5,7 +5,12 @@
 package VIEW;
 
 import CONTROLLER.DAO;
+import DADOS.NomeClasse;
+import MODEL.ConvidadoFamilia;
+import MODEL.ConvidadoIndividual;
+import MODEL.Evento;
 import MODEL.Usuario;
+
 import javax.swing.JOptionPane;
 
 import java.io.File;
@@ -13,19 +18,27 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+
+import java.net.MalformedURLException;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 
+import com.itextpdf.text.DocumentException;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+import com.itextpdf.text.pdf.BaseFont;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
 /**
- *
  * @author Mara
  */
 public class MenuRelatorio {
@@ -39,11 +52,22 @@ public class MenuRelatorio {
 
     private int nOps;
     private DAO dao;
+    private static final String FONTENORMAL = "src/ASSETS/Forum-Regular.ttf";
+    private static final String FONTETITULO = "src/ASSETS/PinyonScript-Regular.ttf";
+    private BaseFont fonteNormal;
+
+    private BaseFont fonteTitulo;
 
     public MenuRelatorio() {
 
         setLista();
+        try { // Tenta carregar as fontes de texto e título personalizadas
+            fonteNormal = BaseFont.createFont(FONTENORMAL, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            fonteTitulo = BaseFont.createFont(FONTETITULO, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 
+        } catch (DocumentException | IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private void setLista() {
@@ -114,13 +138,7 @@ public class MenuRelatorio {
 
         switch (o) {
             case 1: {
-                Menu_READ menuVer = new Menu_READ();
-                menuVer.exibir(this.dao, 0);
-                break;
-            }
-            case 4: {
-                Menu_READ menuVer = new Menu_READ();
-                menuVer.exibir(this.dao, 11, true);
+                this.imprimirRecados();
                 break;
             }
             case 2:
@@ -129,9 +147,11 @@ public class MenuRelatorio {
             case 3:
                 this.imprimirConviteFamilia();
                 break;
+            case 4:
+                this.imprimirPagamentoNoivos();
+                break;
             case 5:
-                Menu_READ menuVer = new Menu_READ();
-                menuVer.exibir(this.dao, 9);
+                this.imprimirConvidadosIndividuais();
                 break;
             case 6:
                 this.mostrarConvidadosConfirmados();
@@ -150,6 +170,19 @@ public class MenuRelatorio {
 
     }
 
+    private void imprimirRecados() {
+        Menu_READ menuVer = new Menu_READ();
+        menuVer.exibir(this.dao, 0);
+        this.gerarPDF("relatorio_recados", this.dao.gerarList(NomeClasse.RECADOS));
+    }
+
+    private void imprimirConvidadosIndividuais() {
+        Menu_READ menuVer = new Menu_READ();
+        menuVer.exibir(this.dao, 9);
+        this.gerarPDF("relatorio_convidados_individuais", this.dao.gerarList(NomeClasse.CONVIDADO_INDIVIDUAL));
+
+    }
+
     private void imprimirConviteIndividual() {
 
         String texto = "\nIMPRESSÃO DE CONVITES INDIVIDUAIS";
@@ -162,7 +195,6 @@ public class MenuRelatorio {
         String idNomeConvidado = JOptionPane.showInputDialog(null, texto, "Imprimir Convite Individual", JOptionPane.QUESTION_MESSAGE);
 
         if (idNomeConvidado != null && !idNomeConvidado.trim().isEmpty()) {
-           
 
             texto = "\nIMPRESSÃO DE CONVITES INDIVIDUAIS";
             texto += "\n                    ";
@@ -174,8 +206,17 @@ public class MenuRelatorio {
             int idConvidado = Util.stringToInt(idNomeConvidado);
             int idEvento = Util.stringToInt(idEventoInserido);
 
-            String gerandoConvite = this.dao.getIprimirConviteINdividual(idConvidado,idEvento);
+            String gerandoConvite = this.dao.getIprimirConviteINdividual(idConvidado, idEvento);
             JOptionPane.showMessageDialog(null, gerandoConvite, "Convite", JOptionPane.INFORMATION_MESSAGE);
+
+            Evento evento = (Evento) this.dao.getItemByID(5, idEvento);
+            ConvidadoIndividual conv = (ConvidadoIndividual) this.dao.getItemByID(9, idConvidado);
+            try {
+                String nomeArquivo = "Convite_" + conv.getNome() + "_" + evento.getNome();
+                this.gerarPDF(nomeArquivo.toLowerCase(), this.dao.gerarListConviteIndividual(idEvento, idConvidado));
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
         } else {
 
             JOptionPane.showMessageDialog(null, "Id do convidado não inserido.", "Erro", JOptionPane.WARNING_MESSAGE);
@@ -206,27 +247,21 @@ public class MenuRelatorio {
             String idEventoInserido = JOptionPane.showInputDialog(null, texto, "Imprimir Convite Familiar", JOptionPane.QUESTION_MESSAGE);
 
             int idEvento = Util.stringToInt(idEventoInserido);
+            Evento evento = (Evento) this.dao.getItemByID(5, idEvento);
+            ConvidadoFamilia convFamilia = (ConvidadoFamilia) this.dao.getItemByID(10, idFamilia);
             String gerandoConvite = this.dao.gerarConviteFamilia(idEvento, idFamilia);
             JOptionPane.showMessageDialog(null, gerandoConvite, "Convite", JOptionPane.INFORMATION_MESSAGE);
-            this.gerarPDF("convite", gerandoConvite);
+            try {
+                String nomeArquivo = "Convite_" + convFamilia.getNome() + "_" + evento.getNome();
+                this.gerarPDF(nomeArquivo.toLowerCase(), this.dao.gerarListConviteFamilia(idEvento, idFamilia));
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+
         } else {
 
             JOptionPane.showMessageDialog(null, "Id do convidado não inserido.", "Erro", JOptionPane.WARNING_MESSAGE);
 
-        }
-    }
-    public void gerarPDF(String nomeArquivo, String texto) {
-        try {
-            String local = System.getProperty("user.dir") + File.separator + "src" + File.separator + "RELATORIOS" + File.separator;
-            Document documento = new Document(PageSize.A2);
-            PdfWriter.getInstance(documento, new FileOutputStream(local + nomeArquivo + ".pdf"));
-            documento.open();
-            Paragraph conteudo = new Paragraph(texto);
-            documento.add(conteudo);
-            documento.close();
-            System.out.println(nomeArquivo + ".pdf adicionado com sucesso");
-        } catch (DocumentException | FileNotFoundException e) {
-            System.err.println("Erro ao gerar PDF: " + e.getMessage());
         }
     }
 
@@ -244,6 +279,12 @@ public class MenuRelatorio {
         }
     }
 
+    private void imprimirPagamentoNoivos() {
+        String relatorio = this.dao.getPagamentosNoivos();
+        JOptionPane.showMessageDialog(null, relatorio, "Relatorio de pagamento dos noivos", JOptionPane.INFORMATION_MESSAGE);
+        this.gerarPDF("relatorio_pagamento_dos_noivos", this.dao.gerarListPagamentosNoivos());
+    }
+
     private void mostrarConvidadosConfirmados() {
 
         String NomeConvidadosConfirmados = this.dao.getNomesConfirmados(9);
@@ -256,6 +297,99 @@ public class MenuRelatorio {
             // Exibe os nomes dos convidados confirmados
             String mensagem = "Lista de Convidados Confirmados:\n" + NomeConvidadosConfirmados + "\n\nClique em OK para voltar.";
             JOptionPane.showMessageDialog(null, mensagem, "Convidados Confirmados", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    public void gerarPDF(String nomeArquivo, ArrayList<String> listaConteudo) {
+        try {
+            BaseColor corDourada = new BaseColor(162, 113, 55);
+            Font fontNormal = new Font(fonteNormal, 12, Font.BOLD, corDourada);
+            Font fontTitle = new Font(fonteTitulo, 26, Font.BOLD, corDourada);
+
+            String local = System.getProperty("user.dir") + File.separator + "src" + File.separator + "RELATORIOS" + File.separator;
+            Document documento = new Document(PageSize.A4);
+            PdfWriter writer = PdfWriter.getInstance(documento, new FileOutputStream(local + nomeArquivo + ".pdf"));
+
+            BackgroundImage bg = new BackgroundImage("src/ASSETS/bg1.png");
+            writer.setPageEvent(bg);
+
+            documento.open();
+
+            Paragraph título = new Paragraph(listaConteudo.getFirst(), fontTitle);
+            título.setAlignment(Element.ALIGN_CENTER);
+            título.setSpacingBefore(70f);
+            título.setSpacingAfter(70f);
+            documento.add(título);
+
+            for (int i = 1; i < listaConteudo.size(); i++) { // Começa do segundo item
+                String linha = listaConteudo.get(i);
+                Paragraph conteudo = new Paragraph(linha, fontNormal);
+                conteudo.setAlignment(Element.ALIGN_LEFT);
+                conteudo.setSpacingBefore(10f);
+                conteudo.setIndentationLeft(20f);
+                conteudo.setIndentationRight(20f);
+                documento.add(conteudo);
+
+            }
+
+            LocalDateTime dataAtual = LocalDateTime.now();
+            FooterEvent footerEvent = new FooterEvent("Relatorio gerado em: " + dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            writer.setPageEvent(footerEvent);
+
+            documento.close();
+
+            String msg = String.format(
+                    "Relatório gerado com sucesso ✔!%n%n"
+                    + "📂 Você pode acessá-lo na pasta RELATORIOS com o nome:%n"
+                    + "📃 ➡ %s.pdf%n%n" + "\n\nEndereço completo do arquivo: \n📂 " + local + nomeArquivo + ".pdf"
+                    + "\n\n❤ Obrigado por utilizar nosso sistema ❤!",
+                    nomeArquivo
+            );
+            Util.mostrarMSG(msg);
+        } catch (IOException e) {
+            System.err.println("Erro ao gerar o PDF: " + e.getMessage());
+            Util.mostrarErro("Não foi possível gerar PDF!");
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    class BackgroundImage extends PdfPageEventHelper {
+
+        private Image background;
+
+        public BackgroundImage(String imagePath) throws IOException, DocumentException {
+            background = Image.getInstance(imagePath);
+            background.scaleToFit(PageSize.A4.getWidth(), PageSize.A4.getHeight());  // Ajusta para o tamanho da página
+            background.setAbsolutePosition(0, 0);
+        }
+
+        @Override
+        public void onEndPage(PdfWriter writer, Document document) {
+            try {
+                PdfContentByte canvas = writer.getDirectContentUnder();
+                canvas.addImage(background); // Adiciona a imagem de fundo
+            } catch (DocumentException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    class FooterEvent extends PdfPageEventHelper {
+
+        private String textoFooter;
+
+        public FooterEvent(String textoFooter) {
+            this.textoFooter = textoFooter;
+        }
+
+        @Override
+        public void onEndPage(PdfWriter writer, Document document) {
+            float xPosition = (document.right() - document.left()) / 2 + document.left();
+            ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
+                    new Paragraph(textoFooter), xPosition, document.bottom(), 0);
         }
     }
 }

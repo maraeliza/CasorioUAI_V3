@@ -2,10 +2,9 @@ package main;
 
 import CONTROLLER.DAO;
 import VIEW.TelaInicial;
- 
+
 public class TrabalhoPOO {
 
-    
     public static void main(String[] args) {
         try {
             DAO dao = new DAO("root", "senhadobanco", "bancoCasorioUAI");
@@ -15,8 +14,10 @@ public class TrabalhoPOO {
             System.err.println(e.getMessage());
         }
     }
-}
+} 
+
+
 
 //JoséMaria15122024iyai
 
- 
+    

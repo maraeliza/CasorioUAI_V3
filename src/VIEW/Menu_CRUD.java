@@ -6,10 +6,10 @@ package VIEW;
 
 import CONTROLLER.DAO;
 import MODEL.Usuario;
+
 import javax.swing.JOptionPane;
 
 /**
- *
  * @author Mara
  */
 public class Menu_CRUD {
@@ -57,6 +57,7 @@ public class Menu_CRUD {
                 case 12 -> {
                     opcoes[contador++] = "Adicionar novo";
                     opcoes[contador++] = "Ver todos";
+                    opcoes[contador++] = "Excluir";
                     opcoes[contador++] = "Voltar";
                 }
                 case 13 -> {
@@ -161,6 +162,11 @@ public class Menu_CRUD {
                                 && this.user.getTipo() == 1) {
                             Menu_UPDATE menuUp = new Menu_UPDATE();
                             menuUp.exibir(this.dao, this.idClasse);
+                        } else if (this.idClasse == 12
+                                && this.user != null
+                                && this.user.getTipo() == 1) {
+                            Menu_DEL menuDel = new Menu_DEL();
+                            menuDel.exibir(this.dao, this.idClasse);
                         } else {
                             MenuInicial menu = new MenuInicial();
                             menu.exibir(this.dao, this.logou, this.user);

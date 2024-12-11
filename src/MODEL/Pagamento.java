@@ -6,16 +6,21 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.Util;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-public class Pagamento implements InterfaceClasse {
+public class Pagamento implements InterfaceClasse, InterfaceBanco {
 
     private int id;
     private LocalDate data;
     private int idPessoa;
     private Pessoa pessoa;
+
+    private int idUser;
+    private Usuario user;
 
     private int idDespesa;
     private Despesa despesa;
@@ -39,8 +44,118 @@ public class Pagamento implements InterfaceClasse {
     private DAO dao;
     private static int total;
 
-    private int idUser;
-    private Usuario user;
+    @Override
+    public String getNomeTabela() {
+        return "tb_pagamento";
+    }
+
+    public static String getNomeTabelaByClass() {
+        return "tb_pagamento";
+    }
+
+    @Override
+    public List<String> getCamposSQL() {
+        List<String> campos = new ArrayList<>();
+        campos.add("id");
+        campos.add("data");
+        campos.add("idPessoa");
+        campos.add("idUser");
+        campos.add("idDespesa");
+        campos.add("idParcela");
+        campos.add("descricao");
+        campos.add("nome");
+        campos.add("idFornecedor");
+        campos.add("valor");
+        campos.add("nParcela");
+        campos.add("dataCriacao");
+        campos.add("dataModificacao");
+        return campos;
+    }
+
+    @Override
+    public List<Object> getValoresSQL() {
+        List<Object> valores = new ArrayList<>();
+        valores.add(this.id);
+        valores.add(this.data);
+        valores.add(this.idPessoa);
+        valores.add(this.idUser);
+        valores.add(this.idDespesa);
+        valores.add(this.idParcela);
+        valores.add(this.descricao);
+        valores.add(this.nome);
+        valores.add(this.idFornecedor);
+        valores.add(this.valor);
+        valores.add(this.nParcela);
+        valores.add(this.dataCriacao);
+        valores.add(this.dataModificacao);
+        return valores;
+    }
+
+    @Override
+    public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
+        boolean alterado = vetor.get(0) != null && vetor.get(1) != null;
+        if (!alterado) {
+            return false;
+        } else {
+            try {
+                this.dao = dao;
+                this.id = (int) vetor.get(0);
+                this.data = vetor.get(1) != null ? (LocalDate) vetor.get(1) : null;
+                int idPessoa = (int) vetor.get(2);
+                Object objB = this.dao.getItemByID(2, idPessoa);
+                if (objB != null) {
+                    if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
+                        this.pessoa = (Pessoa) objB;
+                        this.idPessoa = idPessoa;
+                    }
+                }
+                int idUser = (int) vetor.get(3);
+                Object objUser = dao.getItemByID(3, idUser);
+                if (objUser != null && dao.getBanco().findByItem((InterfaceBanco) objUser)) {
+                    this.user = (Usuario) objUser;
+                    this.idUser = idUser;
+                }
+
+                int idDespesa = (int) vetor.get(4);
+                Object objDespesa = dao.getItemByID(12, idDespesa);
+                if (objDespesa != null && dao.getBanco().findByItem((InterfaceBanco) objDespesa)) {
+                    this.despesa = (Despesa) objDespesa;
+                    this.idDespesa = idDespesa;
+                }
+
+                int idParcela = (int) vetor.get(5);
+                Object objParcela = dao.getItemByID(13, idParcela);
+                if (objParcela != null && dao.getBanco().findByItem((InterfaceBanco) objDespesa)) {
+                    this.parcela = (Parcela) objParcela;
+                    this.idParcela = idParcela;
+                }
+
+                this.descricao = (String) vetor.get(6);
+                this.nome = (String) vetor.get(7);
+
+                int idFornecedor = (int) vetor.get(8);
+                Object objFornecedor = dao.getItemByID(4, idFornecedor);
+                if (objFornecedor != null && dao.getBanco().findByItem((InterfaceBanco) objFornecedor)) {
+                    this.fornecedor = (Fornecedor) objFornecedor;
+                    this.idFornecedor = idFornecedor;
+                }
+
+
+                this.valor = (double) vetor.get(9);
+                this.nParcela = (int) vetor.get(10);
+
+                this.dataCriacao = vetor.get(11) != null ? (LocalDate) vetor.get(11) : null;
+                this.dataModificacao = vetor.get(12) != null ? (LocalDate) vetor.get(12) : null;
+
+                return true;
+            } catch (Exception e) {
+                System.err.println("ERRO AO DEFINIR VALORES");
+                System.out.println(e.getMessage());
+                return false;
+            }
+        }
+    }
+
 
     public static String[] getCampos() {
         String[] campos = new String[10];
@@ -55,7 +170,6 @@ public class Pagamento implements InterfaceClasse {
 
     public boolean trocarDespesa(int id, Despesa despesa) {
 
-        //checa se o id é diferente
         if ((this.getIdDespesa() == 0 || this.getIdDespesa() != id)
                 && despesa != null) {
             this.setIdDespesa(id);
@@ -68,7 +182,6 @@ public class Pagamento implements InterfaceClasse {
 
     public boolean trocarParcela(int id, Parcela parcela) {
 
-        //checa se o id é diferente
         if ((this.getIdParcela() == 0 || this.getIdParcela() != id)
                 && parcela != null) {
 
@@ -231,16 +344,17 @@ public class Pagamento implements InterfaceClasse {
 
             }
             if (alterado) {
-                this.id = ++Pagamento.total;
+                System.out.println(alterado + " = "+vetor);
+                this.id = this.dao.getTotalClasse(11) + 1;
                 this.dataCriacao = LocalDate.now();
                 this.dataModificacao = null;
             }
 
         }
-
+        System.out.println(alterado +" = "+vetor);
         return alterado;
     }
- 
+
     public boolean deletar() {
         if (this.idDespesa != 0) {
             this.despesa.cancelarPagamento();
@@ -248,7 +362,7 @@ public class Pagamento implements InterfaceClasse {
         if (this.idParcela != 0) {
             this.parcela.cancelarPagamento();
         }
-       
+
         return true;
     }
 

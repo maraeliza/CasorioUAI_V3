@@ -48,6 +48,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
         this.pago = false;
         this.agendado = false;
         this.parcelado = false;
+        this.getvParcelas().clear();
     }
 
     @Override
@@ -103,7 +104,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        System.out.println(vetor);
+        this.getvParcelas().clear();
         boolean alterado = vetor.get(0) != null;
         if (!alterado) {
             return alterado;
@@ -112,7 +113,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             this.id = (int) vetor.get(0);
             int idFornecedor = (int) vetor.get(1);
             Object objB = this.dao.getItemByID(4, idFornecedor); // Assumindo o ID é 3 para fornecedor
-            System.out.println(objB);
+
             if (objB != null) {
                 if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
 
@@ -136,6 +137,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             this.nParcelas = (vetor.get(12) != null) ? (int) vetor.get(12) : 0;
             this.dataCriacao = (vetor.get(13) != null) ? (LocalDate) vetor.get(13) : null;
             this.dataModificacao = (vetor.get(14) != null) ? (LocalDate) vetor.get(14) : null;
+
             return alterado;
 
         }
@@ -159,7 +161,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
     }
 
     public boolean criar(DAO dao, List<Object> vetor) {
-
+        this.getvParcelas().clear();
         this.dao = dao;
         boolean alterado = false;
         if (this.dao != null) {
@@ -171,14 +173,13 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
                     this.setNome(((String) vetor.get(1)).toUpperCase()); // Nome
                     if (vetor.get(2) != null && vetor.get(2) instanceof String) {
 
-                        this.setDescricao((String) vetor.get(2));  // descricao
+                        this.setDescricao((String) vetor.get(2));
 
                         double valorTotal = Util.stringToDouble((String) vetor.get(3));
                         this.setValorTotal(valorTotal);
 
                         int nParcelas = Util.stringToInt((String) vetor.get(4));
                         this.setnParcelas(nParcelas);
-                        //checa se o pagamento não é a vista
                         if (this.getnParcelas() > 1 && !((String) vetor.get(5)).equals("0")) {
                             this.setParcelado(true);
                             this.setDataPrimeiroVencimento((String) vetor.get(5));
@@ -208,17 +209,13 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
     }
 
     public void criarParcelas() {
-
         Double valor = this.getValorTotal() / this.getnParcelas();
         this.vParcelas = new ArrayList<>();
         for (int i = 0; i < this.getnParcelas(); i++) {
             LocalDate dataVencimento = this.getDataPrimeiroVencimento().plusMonths(i);
             List<Object> infos = new ArrayList<>(Arrays.asList(this.getId(), dataVencimento, valor, i + 1, this.getnParcelas(), this.getNome()));
-
-            Parcela p = this.dao.cadastrarParcela(13, infos);
-
+            Parcela p = this.dao.cadastrarParcela( infos);
             if (p != null) {
-
                 this.add(p);
 
             }
@@ -329,7 +326,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
 
         this.setAgendado(false);
         this.setDataAgendamento(null);
-        if (this.isParcelado()) {
+        if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
             for (int p = 0; p < this.getnParcelas(); p++) {
                 Parcela parcela = (Parcela) this.getvParcelas().get(p);
                 if (parcela != null && !parcela.isPago()) {
@@ -348,7 +345,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
 
             this.setAgendado(true);
             this.setDataAgendamento(dataAgendamento);
-            if (this.isParcelado()) {
+            if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
                 for (int p = 0; p < this.getvParcelas().size(); p++) {
                     Parcela parcela = (Parcela) this.getvParcelas().get(p);
                     if (parcela != null && !parcela.isPago()) {
@@ -370,7 +367,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
 
             this.setAgendado(true);
             this.setDataAgendamento(dataAgendamento);
-            if (this.isParcelado()) {
+            if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
                 for (int p = 0; p < this.getnParcelas(); p++) {
                     Parcela parcela = (Parcela) this.getvParcelas().get(p);
                     if (parcela != null && !parcela.isPago()) {
@@ -381,6 +378,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             }
             Util.mostrarMSG("Agendamento feito com sucesso!");
         }
+        this.atualizarDataModificacao();
+        this.dao.getBanco().updateItemBanco(this);
         return true;
 
     }
@@ -391,29 +390,28 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             this.setPago(true);
             this.setDataQuitacao(hoje);
             this.setAgendado(false);
-            if (this.isParcelado()) {
+            if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
                 for (int p = 0; p < this.getnParcelas(); p++) {
                     Parcela parcela = (Parcela) this.getvParcelas().get(p);
                     if (parcela != null && !parcela.isPago()) {
                         parcela.pagar(true);
                     }
-
                 }
-
                 Menu_READ menuVer = new Menu_READ();
                 menuVer.exibir(this.dao, 11);
             } else {
-
                 ArrayList<Object> infos = new ArrayList<>(Arrays.asList(this.getIdFornecedor(), hoje, this.getDescricao(), this.getValorTotal(), 1, this.getId(), 1));
                 try {
                     this.dao.cadastrar(11, infos);
                     Menu_READ menuVer = new Menu_READ();
                     menuVer.exibir(this.dao, 11);
                 } catch (Exception e) {
+                    System.err.println("Despesa.java pagar() \nErro ao cadastrar: " + e.getMessage());
                 }
 
             }
-
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
         }
 
     }
@@ -423,7 +421,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             this.setPago(false);
             this.setDataQuitacao(null);
 
-            if (this.isParcelado()) {
+            if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
                 for (int p = 0; p < this.getnParcelas(); p++) {
                     Parcela parcela = (Parcela) this.getvParcelas().get(p);
                     if (parcela != null && parcela.isPago()) {
@@ -431,6 +429,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
                     }
                 }
             }
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
         }
     }
 
@@ -440,7 +440,7 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
             this.setPago(true);
             this.setDataQuitacao(hoje);
             this.setAgendado(false);
-            if (this.isParcelado()) {
+            if (this.isParcelado() && !this.getvParcelas().isEmpty()) {
                 for (int p = 0; p < this.getnParcelas(); p++) {
                     Parcela parcela = this.getvParcelas().get(p);
                     if (parcela != null && !parcela.isPago()) {
@@ -459,7 +459,8 @@ public class Despesa implements InterfaceClasse, InterfaceBanco {
 
                 }
             }
-
+            this.atualizarDataModificacao();
+            this.dao.getBanco().updateItemBanco(this);
         }
 
     }

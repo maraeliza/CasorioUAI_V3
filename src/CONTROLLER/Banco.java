@@ -1,7 +1,6 @@
 package CONTROLLER;
 
-import MODEL.Cerimonial;
-import MODEL.Evento;
+import MODEL.*;
 
 import java.sql.Statement;
 import java.lang.reflect.InvocationTargetException;
@@ -17,9 +16,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import MODEL.InterfaceBanco;
-import MODEL.InterfaceClasse;
 
 public class Banco {
 
@@ -167,7 +163,7 @@ public class Banco {
                     return encontrado;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Banco.java findByItem \nErro ao executar comando: "+e.getMessage());
             }
         }
 
@@ -178,20 +174,14 @@ public class Banco {
         String nomeTabela = this.dao.getNomeTabelaByID(idClasse);
 
         if (nomeTabela.isEmpty()) {
-            if (idClasse == 5) {
-                nomeTabela = Evento.getNomeTabelaByClass();
-            } else if (idClasse == 6) {
-                nomeTabela = Cerimonial.getNomeTabelaByClass();
-            }
-
-        }
-        if (nomeTabela.isEmpty()) {
             System.err.println("NAO FOI POSSIVEL ACESSAR O NOME DA TABELA PARA A CLASSE " + idClasse);
             return null;
         } else {
             String sqlSelect = this.montarSelectByIDSQL(nomeTabela, idItem);
 
-            try (Connection conexao = DriverManager.getConnection(this.con, this.properties); PreparedStatement stmt2 = conexao.prepareStatement(sqlSelect); ResultSet rs = stmt2.executeQuery()) {
+            try (Connection conexao = DriverManager.getConnection(this.con, this.properties);
+                 PreparedStatement stmt2 = conexao.prepareStatement(sqlSelect);
+                 ResultSet rs = stmt2.executeQuery()) {
 
                 Class<?> classe = this.dao.getListaClasses().get(idClasse);
                 if (rs.next()) {
@@ -217,7 +207,6 @@ public class Banco {
                                 } else if (valor instanceof Date) {
 
                                     LocalDate data = ((Date) valor).toLocalDate();
-                                    //ADICIONANDO UM DIA A MAIS PARA A DATA FICAR DE ACORDO COM O BANCO
                                     infos.add(data.plusDays(1));
 
                                 } else if (valor instanceof String) {
@@ -230,6 +219,7 @@ public class Banco {
                             }
 
                         }
+
                         boolean criado = ((InterfaceBanco) objeto).criarObjetoDoBanco(this.dao, infos);
                         if (criado) {
                             return objeto;
@@ -249,6 +239,7 @@ public class Banco {
                 // Logando qualquer erro de SQL
                 System.err.println("COMANDO SQL EXECUTADO : " + sqlSelect);
                 System.err.println("Banco.java getItemByID:\n Erro ao executar consulta SQL: " + e.getMessage());
+                e.printStackTrace();
                 return null;
             }
         }
@@ -269,7 +260,8 @@ public class Banco {
     }
 
     public void executeComandSQL(List<Object> valores, String sql) throws SQLException {
-        try (Connection conexao = DriverManager.getConnection(this.con, this.properties); PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (Connection conexao = DriverManager.getConnection(this.con, this.properties);
+             PreparedStatement stmt = conexao.prepareStatement(sql)) {
 
             int i = 1;
             for (Object valor : valores) {
@@ -294,7 +286,7 @@ public class Banco {
             int affectedRows = stmt.executeUpdate();
 
         } catch (SQLException e) {
-            System.err.println(" executeComandSQL \n Erro ao executar SQL: " + e.getMessage());
+            System.err.println(" executeComandSQL \n Erro ao executar SQL: "+sql+"\n" + e.getMessage());
         } catch (NullPointerException e) {
             System.err.println("Erro de referência nula: " + e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -312,7 +304,11 @@ public class Banco {
     public List<Object> getAllElementsByClass(String nomeTabela, int idClasse) {
 
         String sql = "SELECT ID FROM " + nomeTabela + " ORDER BY ID";
-        try (Connection conexao = DriverManager.getConnection(this.con, this.properties); PreparedStatement stmt = conexao.prepareStatement(sql); ResultSet rs = stmt.executeQuery();) {
+        try (
+            Connection conexao = DriverManager.getConnection(this.con, this.properties); 
+            PreparedStatement stmt = conexao.prepareStatement(sql); 
+            ResultSet rs = stmt.executeQuery();
+        ) {
 
             List<Object> lista = new ArrayList<>();
 
@@ -331,6 +327,7 @@ public class Banco {
         } catch (Exception e) {
             System.err.println(sql);
             System.err.println("Banco.java getAllElementsByClass \n Erro ao executar SQL: " + e.getMessage());
+            e.printStackTrace();
             return new ArrayList<>();
         }
     }

@@ -1,5 +1,6 @@
 package CONTROLLER;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,9 +35,6 @@ import javax.swing.JOptionPane;
 
 import DADOS.NomeClasse;
 
-/**
- * @author Mara
- */
 public class DAO {
 
     private List<Object> despesasAgendadas;
@@ -66,14 +64,10 @@ public class DAO {
             }
             for (NomeClasse nomeClasse : NomeClasse.values()) {
                 if (!nomeClasse.equals(NomeClasse.EVENTO)) {
-                    if (nomeClasse.equals(NomeClasse.PESSOA)) {
-                        System.out.println("\n\n--------------------------------\n\n");
-                        System.out.println(nomeClasse);
-                    }
                     this.syncVetorBanco(nomeClasse);
                 }
-
             }
+
             this.syncVetorBanco(NomeClasse.EVENTO);
             this.dataHoje = LocalDate.now();
         } catch (Exception e) {
@@ -84,7 +78,7 @@ public class DAO {
     public void getAgendados() {
         int c = 0;
         /*------------------------    DESPESAS AGENDADAS ---------------------------------- */
-        List<Object> vDespesa = this.todosOsVetores.get(12);
+        List<Object> vDespesa = this.getVectorByClassName(NomeClasse.DESPESAS);
         List<Object> vDespesaAgendadas = new ArrayList<>();
 
         for (Object elem : vDespesa) {
@@ -99,7 +93,7 @@ public class DAO {
 
         this.setDespesasAgendadas(vDespesaAgendadas);
         /*------------------------    PARCELAS AGENDADAS ---------------------------------- */
-        List<Object> vParcela = this.todosOsVetores.get(13);
+        List<Object> vParcela = this.getVectorByClassName(NomeClasse.PARCELAS);
         List<Object> vParcelaAgendadas = new ArrayList<>();
 
         for (Object elem : vParcela) {
@@ -154,8 +148,27 @@ public class DAO {
         texto.append(this.addTotal(c));
         return texto.toString();
     }
+    public ArrayList<String> gerarList(NomeClasse nomeClasse) {
+        int idClasse = nomeClasse.ordinal();
+        List<Object> vetor = this.getVectorByClassName(nomeClasse);
 
-    public StringBuilder addTotal(int c) {
+        ArrayList<String> texto = new ArrayList<>();
+        String nomeRelatorio = nomeClasse.toString().toLowerCase().replace("_", " ");
+        texto.add("Relatório de "+nomeRelatorio);
+        texto.add(nomeRelatorio.toUpperCase());
+        int c = 0;
+        for (Object item : vetor) {
+            if (item instanceof InterfaceClasse objeto) {
+                texto.add(objeto.ler());
+                c++;
+            }
+        }
+
+        texto.add(this.addTotal(c));
+        return texto;
+    }
+
+    public String addTotal(int c) {
         StringBuilder texto = new StringBuilder();
         if (c > 1) {
             texto.append("\n\nTotal: ").append(c).append(" itens\n");
@@ -164,7 +177,7 @@ public class DAO {
         } else {
             texto = new StringBuilder("\nNenhum item encontrado!\n");
         }
-        return texto;
+        return texto.toString();
     }
 
     public String getTextoParcelas() {
@@ -209,7 +222,7 @@ public class DAO {
         return texto.toString();
     }
 
-    public String getPagamentosNoivos(int idClasse) {
+    public String getPagamentosNoivos() {
         double valorPago = 0.0;
         double valorNoiva = 0.0;
         double valorNoivo = 0.0;
@@ -253,6 +266,7 @@ public class DAO {
             Class<?> classe = this.getClasseByID(idClasse);
             if (InterfaceBanco.class.isAssignableFrom(classe)) {
                 try {
+
                     List<Object> vetorBanco = this.banco.getAllElementsByClass(this.getNomeTabelaByID(idClasse), idClasse);
 
                     if (!vetorBanco.isEmpty()) {
@@ -261,9 +275,8 @@ public class DAO {
                             this.todosOsVetores.get(idClasse).add(elem);
                         }
                     } else {
-                        System.err.println("DAO.java syncVetorBanco \nNenhum item encontrado para a classe " + nomeClasse);
+                        System.out.println("Nenhum item da classe " + nomeClasse + " foi encontrado no banco");
                     }
-
                 } catch (Exception e) {
                     System.err.println("DAO.java syncVetorBanco \nErro inesperado: " + e.getMessage());
 
@@ -277,7 +290,6 @@ public class DAO {
 
     public List<Object> getVectorByClassName(NomeClasse nomeClasse) {
         return this.todosOsVetores.get(nomeClasse.ordinal());
-
     }
 
     public Class<?> getClasseByID(int idClasse) {
@@ -300,7 +312,7 @@ public class DAO {
         return "";
     }
 
-    public boolean cadastrar(int idClasse, ArrayList<Object> infos) throws SQLException {
+    public boolean cadastrar(int idClasse, ArrayList<Object> infos) {
         try {
             boolean criado = false;
             Class<?> classe = this.listaClasses.get(idClasse);
@@ -308,15 +320,29 @@ public class DAO {
             criado = objeto.criar(this, infos);
             if (criado) {
                 this.addVetor(idClasse, objeto);
-                if (idClasse == 12) {
-                    Despesa despesa = (Despesa) objeto;
-                    if (despesa.isParcelado()) {
-                        despesa.criarParcelas();
-                    }
-                }
+
                 if (objeto instanceof InterfaceBanco objB) {
                     if (!this.banco.findByItem(objB)) {
                         this.banco.addItemBanco(objB);
+                    }
+                }
+                if (idClasse == 12) {
+                    if (objeto instanceof Despesa) {
+                        Despesa despesa = (Despesa) objeto;
+                        if (despesa.isParcelado()) {
+                            despesa.criarParcelas();
+                            for (Parcela p : despesa.getvParcelas()) {
+
+                                if (!this.banco.findByItem(p)) {
+                                    this.banco.addItemBanco(p);
+                                    this.addVetor(13, p);
+                                    String sql = "insert into tb_despesa_parcela (id_parcela, id_despesa) values("+p.getId()+","+despesa.getId()+" )";
+                                    System.out.println("INSERINDO RELACIONAMENTO ENTRE TABELA DESPESA E PARCELA");
+                                    this.getBanco().executeSQL(sql);
+                                }
+
+                            }
+                        }
                     }
                 }
             }
@@ -324,17 +350,19 @@ public class DAO {
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException
                  | NoSuchMethodException
                  | SecurityException | InvocationTargetException e) {
+            System.out.println("DAO.java cadastrar \n" + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            System.err.println("DAO.java cadastrar \n" + e.getMessage());
             return false;
         }
     }
 
-    public Parcela cadastrarParcela(int idClasse, List<Object> infos) {
-
+    public Parcela cadastrarParcela(List<Object> infos) {
         boolean criado = false;
         try {
             Parcela objeto = new Parcela();
             criado = objeto.criar(this, infos);
-
             if (criado) {
                 this.addVetor(13, objeto);
                 return objeto;
@@ -373,7 +401,7 @@ public class DAO {
         this.getVectorByClassName(NomeClasse.values()[idClasse]).add(ob);
     }
 
-    public void remove(int idClasse, int posicao) {
+    public void removeFromList(int idClasse, int posicao) {
         if (idClasse >= 0 && idClasse < this.todosOsVetores.size()) {
             List<Object> lista = this.getVectorByClassName(NomeClasse.values()[idClasse]);
             if (lista != null) {
@@ -416,11 +444,20 @@ public class DAO {
                     boolean podeApagar = item.deletar();
                     if (podeApagar) {
                         int posicao = this.getVectorByClassName(NomeClasse.values()[idClasse]).indexOf(item);
-                        this.remove(idClasse, posicao);
+                        this.removeFromList(idClasse, posicao);
                         if (elem instanceof InterfaceBanco objB) {
                             if (this.banco.findByItem(objB)) {
                                 String nomeTabela = this.getNomeTabelaByID(idClasse);
                                 this.banco.delItemBancoByID(nomeTabela, id);
+
+                                if (idClasse == 12) {
+                                    for (Parcela p : ((Despesa) objB).getvParcelas()) {
+                                        int posParcela = this.getVectorByClassName(NomeClasse.PARCELAS).indexOf(p);
+                                        this.removeFromList(13, posParcela);
+                                        this.banco.delItemBancoByID("tb_parcela", p.getId());
+                                    }
+                                }
+
                             } else {
                                 System.out.println("Objeto não está cadastrado no banco!");
                             }
@@ -437,7 +474,7 @@ public class DAO {
     public Pessoa getNoivos(int noiva) {
         Pessoa p = null;
         int n = 0;
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
         for (Object vPessoa : vPessoas) {
             if (vPessoa != null) {
                 Pessoa pessoa = (Pessoa) vPessoa;
@@ -457,7 +494,7 @@ public class DAO {
     public String getCerimoniaisIdNomeDisponiveis() {
         StringBuilder texto = new StringBuilder();
         int n = 0;
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
         for (Object vPessoa : vPessoas) {
             if (vPessoa != null) {
                 Pessoa pessoa = (Pessoa) vPessoa;
@@ -480,7 +517,7 @@ public class DAO {
     public String getNoivo(int noiva) {
         StringBuilder texto = new StringBuilder();
         int n = 0;
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
         for (Object vPessoa : vPessoas) {
 
             if (vPessoa != null) {
@@ -502,7 +539,7 @@ public class DAO {
     public String getTextoNoivos() {
         StringBuilder texto = new StringBuilder("\n                    ");
         int n = 0;
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
         for (Object vPessoa : vPessoas) {
             if (vPessoa != null) {
                 Pessoa pessoa = (Pessoa) vPessoa;
@@ -523,7 +560,7 @@ public class DAO {
     public String getDespesasParceladasPendentes() {
         StringBuilder texto = new StringBuilder("\n                    ");
 
-        List<Object> vObj = this.todosOsVetores.get(12);
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.DESPESAS);
         int c = 0;
         for (Object o : vObj) {
             if (o != null) {
@@ -545,7 +582,7 @@ public class DAO {
     public String getDespesasPendentes() {
         StringBuilder texto = new StringBuilder("\n                    ");
 
-        List<Object> vObj = this.todosOsVetores.get(12);
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.DESPESAS);
         int c = 0;
         for (Object o : vObj) {
             if (o != null) {
@@ -567,7 +604,7 @@ public class DAO {
     public String getDespesasPendentesAgendada() {
         StringBuilder texto = new StringBuilder("\n DESPESAS COM PAGAMENTO AGENDADO \n");
 
-        List<Object> vObj = this.todosOsVetores.get(12);
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.DESPESAS);
         int c = 0;
         for (Object o : vObj) {
             if (o != null) {
@@ -579,7 +616,7 @@ public class DAO {
                     c++;
 
                 } else {
-                    if (!despesa.isPago() && !despesa.isAgendado() && despesa.isParcelado()) {
+                    if (!despesa.isPago() && !despesa.isAgendado() && despesa.isParcelado() && !despesa.getvParcelas().isEmpty()) {
                         for (int p = 0; p < despesa.getnParcelas(); p++) {
                             Parcela parcela = despesa.getvParcelas().get(p);
                             if (parcela != null && !parcela.isPago() && parcela.isAgendado()) {
@@ -660,7 +697,7 @@ public class DAO {
 
     public String getNomesPessoasParaCriarUsers() {
         StringBuilder texto = new StringBuilder("\n                    ");
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
 
         int c = 0;
         for (Object vPessoa : vPessoas) {
@@ -685,7 +722,7 @@ public class DAO {
     public String getNomesPessoasSemUsers() {
 
         StringBuilder texto = new StringBuilder("\n                    ");
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
 
         int c = 0;
         for (Object vPessoa : vPessoas) {
@@ -708,7 +745,7 @@ public class DAO {
 
     public String getNomesPessoasSemConvidado() {
         StringBuilder texto = new StringBuilder("\n                    ");
-        List<Object> vPessoas = this.todosOsVetores.get(2);
+        List<Object> vPessoas = this.getVectorByClassName(NomeClasse.PESSOA);
 
         int c = 0;
         for (Object vPessoa : vPessoas) {
@@ -731,7 +768,7 @@ public class DAO {
     }
 
     public Usuario getUserByIdPessoa(int id) {
-        List<Object> vUsers = this.todosOsVetores.get(3);
+        List<Object> vUsers = this.getVectorByClassName(NomeClasse.USUARIOS);
 
         for (Object vUser : vUsers) {
             Usuario user = (Usuario) vUser;
@@ -745,7 +782,7 @@ public class DAO {
 
     public String getPresentesEscolhidos(Usuario user) {
         StringBuilder texto = new StringBuilder("\n                    ");
-        List<Object> vPresente = this.todosOsVetores.get(1);
+        List<Object> vPresente = this.getVectorByClassName(NomeClasse.PRESENTES);
 
         int c = 0;
         for (Object o : vPresente) {
@@ -813,7 +850,7 @@ public class DAO {
     }
 
     public ConvidadoIndividual findConvidado(int idUser) {
-        List<Object> vObj = this.todosOsVetores.get(9);
+        List<Object> vObj = this.getVectorByClassName(NomeClasse.CONVIDADO_INDIVIDUAL);
 
         for (Object o : vObj) {
 
@@ -853,7 +890,7 @@ public class DAO {
     public List<InterfaceClasse> getEventosByData(LocalDate data) {
         List<InterfaceClasse> vEventoConsulta = new ArrayList<>();
 
-        List<Object> vEvento = this.todosOsVetores.get(6);
+        List<Object> vEvento = this.getVectorByClassName(NomeClasse.CERIMONIAL);
 
         for (Object o : vEvento) {
             Evento evento = (Evento) o;
@@ -866,7 +903,7 @@ public class DAO {
 
     public List<InterfaceClasse> getParcelasByDataVencimento(LocalDate dataVencimento) {
         List<InterfaceClasse> vParcelaConsulta = new ArrayList<>();
-        List<Object> vParcela = this.todosOsVetores.get(13);
+        List<Object> vParcela = this.getVectorByClassName(NomeClasse.PARCELAS);
         for (Object o : vParcela) {
             if (o != null) {
                 Parcela parcela = (Parcela) o;
@@ -905,6 +942,106 @@ public class DAO {
         return texto;
 
     }
+    public ArrayList<String> gerarListConviteIndividual(int idConvidado, int idEvento) {
+        Evento evento = (Evento) this.getItemByID(5, idEvento);
+        ConvidadoIndividual conv = (ConvidadoIndividual) this.getItemByID(9, idConvidado);
+        ArrayList<String> textoList = new ArrayList<>();
+    
+        if (conv != null) {
+            if (evento != null) {
+                textoList.add("\nConvite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+                textoList.add("\nCom grande prazer, gostaríamos de convidar você, " + conv.getNome() + ", para compartilhar conosco este momento tão especial em nossas vidas.");
+                textoList.add("É com imensa alegria que contamos com a sua presença para celebrar a união de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome() + ".");
+                textoList.add("\nEvento: " + evento.getNome());
+                textoList.add("Data: " + evento.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                if (evento.getEndereco() != null) {
+                    textoList.add("Local: " + evento.getEndereco());
+                }
+                textoList.add("\nConfirme a sua presença");
+                textoList.add("Para isso, basta logar com as credenciais a seguir:");
+                textoList.add("Login: " + conv.getUser().getLogin());
+                textoList.add("Senha: " + conv.getUser().getSenha());
+                textoList.add("\nSerá uma grande honra tê-lo conosco nesse momento tão significativo de nossas vidas.");
+                textoList.add("Com carinho,");
+                textoList.add(this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+            } else {
+                textoList.add("Nenhum evento com id " + idEvento + " foi encontrado!");
+            }
+        } else {
+            textoList.add("Nenhum convidado com id " + idConvidado + " foi encontrado!");
+        }
+    
+        return textoList;
+    }
+
+    public ArrayList<String> gerarListPagamentosNoivos() {
+        double valorPago = 0.0;
+        double valorNoiva = 0.0;
+        double valorNoivo = 0.0;
+        int totalPgs = 0;
+        ArrayList<String> textoList = new ArrayList<>();
+    
+        textoList.add("\n Relatório de Pagamentos do Casal");
+    
+        for (int i = 0; i < this.todosOsVetores.get(11).size(); i++) {
+            Pagamento pg = (Pagamento) this.todosOsVetores.get(11).get(i);
+            if (pg != null && pg.getPessoa() != null) {
+                if (pg.getPessoa().getTipo().equalsIgnoreCase("NOIVO") || pg.getPessoa().getTipo().equalsIgnoreCase("NOIVA")) {
+                    textoList.add("Valor pago: " + pg.getValor() + " | Data do pagamento: " + pg.getData());
+                    textoList.add("Pagante: " + pg.getPessoa().getNome());
+                    valorPago += pg.getValor();
+                    totalPgs++;
+                }
+                if (pg.getPessoa().getTipo().equalsIgnoreCase("NOIVA")) {
+                    valorNoiva += pg.getValor();
+                }
+                if (pg.getPessoa().getTipo().equalsIgnoreCase("NOIVO")) {
+                    valorNoivo += pg.getValor();
+                }
+            }
+        }
+    
+        String totalPgsStr = totalPgs > 1 ? "pagamentos" : "pagamento";
+        textoList.add("\nTotal: " + totalPgs + " " + totalPgsStr);
+        textoList.add("VALOR TOTAL GASTO PELOS NOIVOS R$" + String.format("%.2f", valorPago));
+        textoList.add("GASTOS DA NOIVA:  R$" + String.format("%.2f", valorNoiva));
+        textoList.add("GASTOS DO NOIVO: R$" + String.format("%.2f", valorNoivo));
+    
+        return textoList;
+    }
+    
+    public ArrayList<String> gerarListConviteFamilia(int idEvento, int idConvidadoFamilia) {
+        Evento evento = (Evento) this.getItemByID(5, idEvento);
+        ConvidadoFamilia convFamilia = (ConvidadoFamilia) this.getItemByID(10, idConvidadoFamilia); // Classe ConvidadoFamilia
+        ArrayList<String> textoList = new ArrayList<>();
+
+        if (convFamilia != null) {
+            if (evento != null) {
+                textoList.add("\nConvite Para o Casamento de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+                textoList.add("Com imensa alegria, gostaríamos de convidar a família " + convFamilia.getNome() + " para compartilhar conosco o início de uma nova jornada! É com carinho e emoção que os convidamos para o nosso casamento.");
+                textoList.add("Este é um momento especial e significante em nossas vidas, e ter a sua presença tornará este dia ainda mais memorável e feliz.");
+                textoList.add("Por favor, reserve a data e venha celebrar conosco a união de " + this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome() + ".");
+
+                textoList.add("\nEvento: " + evento.getNome());
+                textoList.add("Data: " + evento.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                if(evento.getEndereco() != null) {
+                    textoList.add("Local: " + evento.getEndereco());
+                }
+                textoList.add("\nPor favor, confirme a presença de sua família");
+                textoList.add("Para isso, peça para o titular da sua família logar com o acesso a seguir:");
+                textoList.add("Acesso: " + convFamilia.getAcesso());
+                textoList.add("\n\nSerá uma grande alegria contar com a sua presença nesse momento tão especial de nossas vidas.");
+                textoList.add("Atenciosamente,");
+                textoList.add(this.getNoivos(0).getNome() + " e " + this.getNoivos(1).getNome());
+            } else {
+                textoList.add("Nenhum evento com id " + idEvento + " foi encontrado!");
+            }
+        } else {
+            textoList.add("Nenhuma família com id " + idConvidadoFamilia + " foi encontrada!");
+        }
+
+        return textoList;
+    }
 
     public String gerarConviteFamilia(int idEvento, int idConvidadoFamilia) {
         Evento evento = (Evento) this.getItemByID(5, idEvento);
@@ -917,7 +1054,11 @@ public class DAO {
                 texto += "\nCom muito prazer, gostaríamos de convidar a família " + convFamilia.getNome() + " para o nosso casamento!\n";
                 texto += "Evento: " + evento.getNome() + " \n";
                 texto += "Data: " + evento.getData() + " \n";
-                texto += "Local: " + evento.getEndereco() + " \n";
+
+                if(evento.getEndereco() != null) {
+                    texto+="Local: " + evento.getEndereco();
+                }
+
                 texto += "\nPor favor, confirme a presença de sua família\n";
                 texto += "\nPara isso, peça para o titular da sua família logar com o acesso a seguir: \n";
                 texto += "Acesso: " + convFamilia.getAcesso() + " \n"; // Acesso específico da família

@@ -73,7 +73,6 @@ public class Cerimonial implements InterfaceClasse, InterfaceBanco {
     }
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        System.out.println(vetor);
         boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null;
         if (!alterado) {
             return false;

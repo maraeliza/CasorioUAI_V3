@@ -94,14 +94,12 @@ public class Evento implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        System.out.println(vetor);
         boolean alterado = vetor.get(0) != null && vetor.get(1) != null;
         if (!alterado) {
             return alterado;
         } else {
             try {
                 this.id = (int) vetor.get(0);
-                System.out.println("ID: " + this.id);
                 this.nome = (String) vetor.get(1);
                 if (vetor.get(2) != null && (int) vetor.get(2) != 0) {
                     this.idCerimonial = (int) vetor.get(2);
@@ -135,7 +133,7 @@ public class Evento implements InterfaceClasse, InterfaceBanco {
                 this.data = vetor.get(7) != null ? (LocalDate) vetor.get(7) : null;
                 this.dataCriacao = vetor.get(8) != null ? (LocalDate) vetor.get(8) : null;
                 this.dataModificacao = vetor.get(9) != null ? (LocalDate) vetor.get(9) : null;
-                System.out.println("VALORES DEFINIDOS COM SUCESSO! ");
+
                 return alterado;
             } catch (Exception e) {
                 System.err.println("ERRO AO DEFINIR VALORES");
@@ -311,7 +309,7 @@ public class Evento implements InterfaceClasse, InterfaceBanco {
                 return this.getCartorio().getEndereco();
             }
         }
-        return "N/A";
+        return null;
     }
 
     public void setCerimonial(Cerimonial cerimonial) {

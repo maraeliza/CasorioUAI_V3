@@ -85,10 +85,8 @@ public class Usuario implements InterfaceClasse, InterfaceBanco {
 
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
-        System.out.println(vetor);
         boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null;
         if (!alterado) {
-
             return alterado;
         } else {
 
@@ -96,11 +94,9 @@ public class Usuario implements InterfaceClasse, InterfaceBanco {
             this.id = (int) vetor.get(0);
             int idPessoa = (int) vetor.get(1);
             Object objB = this.dao.getItemByID(2, idPessoa);
-            System.out.println(objB);
             if (objB != null) {
                 if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
                     Pessoa pessoa = (Pessoa) objB;
-                    System.out.println("Definindo valores");
                     this.pessoa = pessoa;
                     this.idPessoa = idPessoa;
                     this.tipo = (int) vetor.get(2);

@@ -60,7 +60,7 @@ public class Menu_READ {
                 this.nomeClasse = this.dao.getNameClasseById(idClasse);
 
                 try {
-                    String texto = this.dao.getPagamentosNoivos(idClasse);
+                    String texto = this.dao.getPagamentosNoivos();
                     int res = JOptionPane.showConfirmDialog(null, texto, "RELATÓRIO DE " + this.nomeClasse.toUpperCase(), JOptionPane.OK_CANCEL_OPTION);
 
                     System.out.println("TEXTO: " + texto);
