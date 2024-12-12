@@ -98,6 +98,24 @@ public class Banco {
         return sql.toString();
     }
 
+    public int getTotalBanco(String nomeTabela){
+        String sql = "SELECT COUNT(*) AS total_itens FROM " + nomeTabela;
+        try (Connection conexao = DriverManager.getConnection(this.con, this.properties); PreparedStatement stmt2 = conexao.prepareStatement(sql);) {
+                    boolean encontrado = false;
+                    ResultSet rs = stmt2.executeQuery();
+                    encontrado = rs.next();
+                    Long valor = rs.getLong("total_itens");
+
+                    rs.close();
+                    stmt2.close();
+                    conexao.close();
+                    return valor.intValue();
+                }catch(Exception e){
+                    System.out.println("ERRO EM GET TOTAL BANCO NA TABELA "+nomeTabela);
+                    System.out.println(e.getMessage());
+                    return 0;
+                }
+    }
     public String montarUpdateSQL(InterfaceBanco item) {
         StringBuilder sql = new StringBuilder();
         List<String> campos = item.getCamposSQL();

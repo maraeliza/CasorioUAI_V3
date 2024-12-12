@@ -35,7 +35,7 @@ public class Menu_READ {
                     
                     texto = dao.getTexto(idClasse);
 
-                    int res = JOptionPane.showConfirmDialog(null, texto, "RELATÓRIO DE " + this.nomeClasse.toUpperCase(), JOptionPane.OK_CANCEL_OPTION);
+                    int res = JOptionPane.showConfirmDialog(null, texto, "RELATÓRIO DE " + this.nomeClasse.toUpperCase().replace("_", " "), JOptionPane.OK_CANCEL_OPTION);
 
                 } catch (Exception e) {
                     e.printStackTrace();

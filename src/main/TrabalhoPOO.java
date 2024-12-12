@@ -7,18 +7,15 @@ public class TrabalhoPOO {
 
     public static void main(String[] args) {
         try {
-            DAO dao = new DAO("root", "senhadobanco", "bancoCasorioUAI");
+            DAO dao = new DAO("root", "admin", "bancoCasorioUAI");
             TelaInicial menu = new TelaInicial();
             menu.exibir(dao);
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-         
     }
 } 
 
-
- 
 //JoséMaria15122024onhv 
 //JoséMaria15122024gzju  
 

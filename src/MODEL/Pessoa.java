@@ -103,7 +103,10 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
         boolean alterado = false;
-    
+        System.out.println("PESSOA: "+ vetor);
+        for(int i = 0; i < vetor.size(); i++){
+            System.out.println(i + " " + vetor.get(i));
+        }
         if (vetor.get(0) != null) {
             this.id = (int) vetor.getFirst();
             alterado = true;
@@ -176,7 +179,6 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
             LocalDate hoje = LocalDate.now();
             int idade = hoje.getYear() - this.nascimento.getYear();
 
-            // Verifica se a data de nascimento já ocorreu este ano
             if (hoje.getMonthValue() < this.nascimento.getMonthValue()
                     || (hoje.getMonthValue() == this.nascimento.getMonthValue() && hoje.getDayOfMonth() < this.nascimento.getDayOfMonth())) {
                 idade--;
@@ -238,11 +240,11 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
         this.dao = dao;
         if (this.dao != null) {
             if (vetor.get(0) != null && vetor.get(0) instanceof String) {
-                this.nome = (String) vetor.get(0); // Nome
+                this.nome = (String) vetor.get(0); 
                 if (vetor.get(1) != null && vetor.get(1) instanceof String) {
-                    this.telefone = (String) vetor.get(1); // Telefone
+                    this.telefone = (String) vetor.get(1); 
                     if (vetor.get(2) != null && vetor.get(2) instanceof String) {
-                        this.tipo = (String) vetor.get(2); // Tipo
+                        this.tipo = (String) vetor.get(2);
                         if (vetor.get(3) != null && vetor.get(3) instanceof String) {
                             String nascimentoStr = (String) vetor.get(3);
                             try {
@@ -262,7 +264,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
 
             }
             if (criado) {
-                this.id = this.dao.getTotalClasse(2);
+                this.id = this.dao.getTotalClasse(2) + 1;
                 this.dataCriacao = LocalDate.now();
                 this.dataModificacao = null;
 

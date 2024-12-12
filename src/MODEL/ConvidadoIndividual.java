@@ -6,7 +6,6 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.Util;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -86,6 +85,7 @@ public class ConvidadoIndividual implements InterfaceClasse, InterfaceBanco {
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
 
         boolean alterado = vetor.get(0) != null && vetor.get(1) != null && vetor.get(2) != null && vetor.get(3) != null;
+   
         if (!alterado) {
             return alterado;
         } else {
@@ -95,7 +95,7 @@ public class ConvidadoIndividual implements InterfaceClasse, InterfaceBanco {
             if (idPessoa > 0) {
                 Object objB = this.dao.getItemByID(2, idPessoa);
                 if (objB != null) {
-                    if (this.dao.getBanco().findByItem((InterfaceBanco) objB)) {
+                    
                         this.pessoa = (Pessoa) objB;
                         this.pessoa.setConvidadoVinculado(true);
                         this.dao.getBanco().updateItemBanco(this.pessoa);
@@ -125,9 +125,7 @@ public class ConvidadoIndividual implements InterfaceClasse, InterfaceBanco {
                         this.dataModificacao = vetor.get(7) != null ? (LocalDate) vetor.get(7) : null;
 
                         return alterado;
-                    } else {
-                        System.out.println("Objeto nao encontrado no banco");
-                    }
+                    
                 }
             }
         }
@@ -205,10 +203,11 @@ public class ConvidadoIndividual implements InterfaceClasse, InterfaceBanco {
                         ConvidadoFamilia familia = (ConvidadoFamilia) this.dao.getItemByID(10, idFamilia);
                         if (familia != null) {
                             this.trocarFamilia(idFamilia, familia);
-
+                          
                             ArrayList<Object> userDados = new ArrayList<>(Arrays.asList((String) vetor.get(0), p.getNome().toUpperCase(), familia.getAcesso()));
                             try {
                                 this.dao.cadastrar(3, userDados);
+                                
                                 Usuario user = this.dao.getUserByIdPessoa(p.getId());
                                 if (user != null) {
                                     this.setUser(user);

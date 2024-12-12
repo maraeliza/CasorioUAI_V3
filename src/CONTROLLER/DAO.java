@@ -139,7 +139,9 @@ public class DAO {
     }
 
     public int getTotalClasse(int idClasse) {
-        return this.getVectorByClassName(NomeClasse.values()[idClasse]).size();
+        String nomeTabela = this.getNomeTabelaByID(idClasse);
+        int total = this.banco.getTotalBanco(nomeTabela);
+        return total;
     }
 
     public String getTexto(int idClasse, List<InterfaceClasse> vetor) {

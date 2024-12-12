@@ -170,10 +170,11 @@ public class MenuRelatorio {
 
     }
 
-    private void mostrarPagamentosAgendados(){
+    private void mostrarPagamentosAgendados() {
         this.dao.mostrarPagamentosAgendados();
         this.gerarPDF("relatorio_pagamentos_agendados", this.dao.gerarListDespesasPendentesAgendada());
     }
+
     private void imprimirRecados() {
         Menu_READ menuVer = new Menu_READ();
         menuVer.exibir(this.dao, 0);
@@ -207,20 +208,25 @@ public class MenuRelatorio {
             texto += "\nINSIRA O ID DO EVENTO PARA GERAR O CONVITE:";
 
             String idEventoInserido = JOptionPane.showInputDialog(null, texto, "Imprimir Convite Individual", JOptionPane.QUESTION_MESSAGE);
-            int idConvidado = Util.stringToInt(idNomeConvidado);
-            int idEvento = Util.stringToInt(idEventoInserido);
+            if (idEventoInserido != null) {
+                int idConvidado = Util.stringToInt(idNomeConvidado);
+                int idEvento = Util.stringToInt(idEventoInserido);
+                if (idEvento > 0 && idConvidado > 0) {
+                    String gerandoConvite = this.dao.getIprimirConviteINdividual(idConvidado, idEvento);
+                    JOptionPane.showMessageDialog(null, gerandoConvite, "Convite", JOptionPane.INFORMATION_MESSAGE);
 
-            String gerandoConvite = this.dao.getIprimirConviteINdividual(idConvidado, idEvento);
-            JOptionPane.showMessageDialog(null, gerandoConvite, "Convite", JOptionPane.INFORMATION_MESSAGE);
+                    Evento evento = (Evento) this.dao.getItemByID(5, idEvento);
+                    ConvidadoIndividual conv = (ConvidadoIndividual) this.dao.getItemByID(9, idConvidado);
+                    try {
+                        String nomeArquivo = "Convite_" + conv.getNome() + "_" + evento.getNome();
+                        this.gerarPDF(nomeArquivo.toLowerCase(), this.dao.gerarListConviteIndividual(idEvento, idConvidado));
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }
 
-            Evento evento = (Evento) this.dao.getItemByID(5, idEvento);
-            ConvidadoIndividual conv = (ConvidadoIndividual) this.dao.getItemByID(9, idConvidado);
-            try {
-                String nomeArquivo = "Convite_" + conv.getNome() + "_" + evento.getNome();
-                this.gerarPDF(nomeArquivo.toLowerCase(), this.dao.gerarListConviteIndividual(idEvento, idConvidado));
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
             }
+
         } else {
 
             JOptionPane.showMessageDialog(null, "Id do convidado não inserido.", "Erro", JOptionPane.WARNING_MESSAGE);
@@ -319,7 +325,7 @@ public class MenuRelatorio {
             writer.setPageEvent(bg);
 
             documento.open();
-            if(listaConteudo.size() > 1){
+            if (listaConteudo.size() > 1) {
                 Paragraph título = new Paragraph(listaConteudo.getFirst(), fontTitle);
                 título.setAlignment(Element.ALIGN_CENTER);
                 título.setSpacingBefore(70f);
@@ -336,7 +342,7 @@ public class MenuRelatorio {
                     documento.add(conteudo);
 
                 }
-            }else{
+            } else {
                 String linha = listaConteudo.getFirst();
 
                 Paragraph espaco = new Paragraph("\n\n\n\n", fontNormal);
@@ -351,9 +357,8 @@ public class MenuRelatorio {
                 documento.add(conteudo);
             }
 
-
             LocalDateTime dataAtual = LocalDateTime.now();
-            FooterEvent footerEvent = new FooterEvent("Relatorio gerado em: " + dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            FooterEvent footerEvent = new FooterEvent("Relatório gerado em: " + dataAtual.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
             writer.setPageEvent(footerEvent);
 
             documento.close();
@@ -409,7 +414,7 @@ public class MenuRelatorio {
         public void onEndPage(PdfWriter writer, Document document) {
             float xPosition = (document.right() - document.left()) / 2 + document.left();
             ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER,
-                    new Paragraph(textoFooter), xPosition, document.bottom()-90, 0);
+                    new Paragraph(textoFooter), xPosition, document.bottom() - 90, 0);
         }
     }
 }

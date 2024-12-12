@@ -112,7 +112,7 @@ public class MenuInicial {
             this.op = JOptionPane.showInputDialog(null, this.texto, "UaiCasórioPro", JOptionPane.QUESTION_MESSAGE);
             if (this.op != null ) {
                 o = Util.stringToInt(this.op);
-                if(o > 0 && o <= this.nOps){
+                if(o > 0 && o <= 16){
                     this.lidarEscolha(o);
                 }else{
                     deslogar();

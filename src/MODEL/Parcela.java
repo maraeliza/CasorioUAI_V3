@@ -6,7 +6,6 @@ package MODEL;
 
 import CONTROLLER.DAO;
 import VIEW.*;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -143,6 +142,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
         this.dao = dao;
         boolean alterado = false;
         if (vetor.get(0) != null) {
+            this.id = this.dao.getTotalClasse(13) + 1;
             this.idDespesa = (int) vetor.get(0);
             if (this.idDespesa != 0) {
                 Despesa despesa = (Despesa) this.dao.getItemByID(12, this.idDespesa);
@@ -167,7 +167,7 @@ public class Parcela implements InterfaceClasse, InterfaceBanco {
 
                             alterado = true;
 
-                            this.id = this.dao.getTotalClasse(13) + 1;
+                           
                             this.dataCriacao = LocalDate.now();
                             this.dataModificacao = null;
                             this.pago = false;
