@@ -6,10 +6,7 @@ package VIEW;
 
 import CONTROLLER.DAO;
 import MODEL.Usuario;
-
 import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.JOptionPane;
 
 /**
@@ -29,8 +26,6 @@ public class Menu_CREATE {
     private Class classe;
 
     public void exibir(DAO dao, int idClasse, Usuario user) {
-        System.out.println("\n\n-------------------------CRIANDO ITENS------------------------------");
-        System.out.println(user);
         this.dao = dao;
         this.vetor = new String[10];
         this.nomeClasse = this.dao.getNameClasseById(idClasse);
@@ -116,7 +111,7 @@ public class Menu_CREATE {
         nomeClasse = nomeClasse.toUpperCase().replace("_", " ");
         String conteudo = "";
         switch (nomeClasse) {
-            case "USUÁRIOS" -> {
+            case "USUARIOS" -> {
                 switch (i) {
                     case 1 -> {
                         if (this.dao.getTotalClasse(2) > 1) {

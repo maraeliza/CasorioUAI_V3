@@ -103,10 +103,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
     @Override
     public boolean criarObjetoDoBanco(DAO dao, List<Object> vetor) {
         boolean alterado = false;
-        System.out.println("PESSOA: "+ vetor);
-        for(int i = 0; i < vetor.size(); i++){
-            System.out.println(i + " " + vetor.get(i));
-        }
+        
         if (vetor.get(0) != null) {
             this.id = (int) vetor.getFirst();
             alterado = true;
@@ -142,8 +139,10 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
         if (vetor.get(8) != null) {
             if (vetor.get(8) instanceof String) {
                 this.userVinculado = ((String) vetor.get(8)).equalsIgnoreCase("true");
+              
             } else if (vetor.get(8) instanceof Boolean) {
                 this.userVinculado = (Boolean) vetor.get(8);
+              
             } else {
                 this.userVinculado = false;
             }
@@ -153,6 +152,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
             if (vetor.get(9) instanceof String) {
                 this.cerimonialVinculado = ((String) vetor.get(9)).equalsIgnoreCase("true");
             } else if (vetor.get(9) instanceof Boolean) {
+                
                 this.cerimonialVinculado = (Boolean) vetor.get(9);
             } else {
                 this.cerimonialVinculado = false;
@@ -170,7 +170,7 @@ public class Pessoa implements InterfaceClasse, InterfaceBanco {
             alterado = true;
         }
     
-        return alterado;
+        return true;
     }
     
 

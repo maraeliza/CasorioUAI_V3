@@ -1,39 +1,20 @@
 package CONTROLLER;
 
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import MODEL.Cartorio;
-import MODEL.Cerimonial;
-import MODEL.InterfaceClasse;
-import MODEL.ConvidadoFamilia;
-import MODEL.ConvidadoIndividual;
-import MODEL.Despesa;
-import MODEL.Evento;
-import MODEL.Fornecedor;
-import MODEL.Igreja;
-import MODEL.InterfaceBanco;
-import MODEL.Pagamento;
-import MODEL.Parcela;
-import MODEL.Pessoa;
-import MODEL.Presente;
-import MODEL.Recado;
-
-import MODEL.Usuario;
+import DADOS.NomeClasse;
+import MODEL.*;
 import VIEW.MenuInicial;
 import VIEW.TelaInicial;
 import VIEW.Util;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
-
-import DADOS.NomeClasse;
 
 public class DAO {
 
@@ -1079,8 +1060,7 @@ public class DAO {
                 textoList.add("\nNome: " + conv.getNome());
                 textoList.add("Idade: " + conv.getPessoa().getIdade());
                 textoList.add("Tipo: " + conv.getPessoa().getTipo().toLowerCase());
-                textoList.add("Pontos: " + pts);
-                textoList.add(""); // Linha em branco para separar cada convidado
+                
                 if (conv.getPessoa().getIdade() <= 8) {
                     pontos = 0.0;
                 } else if (conv.getPessoa().getIdade() >= 9 && conv.getPessoa().getIdade() <= 13) {
@@ -1095,8 +1075,11 @@ public class DAO {
                 qtdPontos = qtdPontos + pontos;
                 pts = Double.toString(pontos);
                 c++;
+                textoList.add("Pontos: " + pts);
+                textoList.add(""); // Linha em branco para separar cada convidado
             } else {
                 pontos = 0;
+                qtdPontos = qtdPontos + pontos;
             }
         }
         if (c == 0) {
